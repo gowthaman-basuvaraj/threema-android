@@ -103,11 +103,11 @@ android {
         //noinspection OldTargetApi
         targetSdkVersion 33
         vectorDrawables.useSupportLibrary = true
-        applicationId "ch.threema.app"
+        applicationId "my.threema.app"
         testApplicationId 'ch.threema.app.test'
         versionCode defaultVersionCode
         versionName "${app_version}${beta_suffix}"
-        resValue "string", "app_name", "Threema"
+        resValue "string", "app_name", "Sygnal App"
         // package name used for sync adapter - needs to match mime types below
         resValue "string", "package_name", applicationId
         resValue "string", "contacts_mime_type", "vnd.android.cursor.item/vnd.ch.threema.app.profile"

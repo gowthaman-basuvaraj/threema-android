@@ -104,6 +104,7 @@
 		android:layout_height="wrap_content"
 		android:layout_width="wrap_content"
 		app:fabSize="normal"
+        android:visibility="gone"
 		app:layout_anchor="@id/appbar"
 		app:layout_anchorGravity="bottom|right|end"
 		app:srcCompat="@drawable/ic_pencil_outline"

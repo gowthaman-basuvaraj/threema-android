@@ -28,6 +28,7 @@
 		app:layout_constraintLeft_toLeftOf="parent"
 		app:layout_constraintRight_toRightOf="parent"
 		app:layout_anchor="@id/pager"
+        android:visibility="gone"
 		app:layout_anchorGravity="bottom|right|end"
 		android:clickable="true"/>
 

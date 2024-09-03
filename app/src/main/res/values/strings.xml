@@ -323,7 +323,7 @@
     <string name="state_dialog_deleted">Deleted</string>
 	<string name="state_dialog_status">Status</string>
 	<string name="title_tab_recent">Recent</string>
-	<string name="no_recent_conversations">No chats found</string>
+	<string name="no_recent_conversations">No Meetings found</string>
 	<string name="save_changes">Save</string>
 	<string name="group_created_confirm">Group successfully created</string>
 	<string name="creating_group">Creating group</string>

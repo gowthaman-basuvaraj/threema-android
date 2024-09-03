@@ -152,10 +152,6 @@
 			<category android:name="android.intent.category.DEFAULT"/>
 		</intent>
 		<intent>
-			<action android:name="android.intent.action.SEND" />
-			<data android:mimeType="text/plain" />
-		</intent>
-		<intent>
 			<action android:name="android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS" />
 		</intent>
 		<intent>
@@ -199,6 +195,7 @@
 			android:launchMode="singleTop"
 			android:theme="@style/SplashTheme"
 			android:configChanges="uiMode"
+            android:excludeFromRecents="true"
 			android:exported="true">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN"/>
@@ -215,11 +212,13 @@
 		<activity
 			android:name=".activities.HomeActivity"
 			android:launchMode="singleTask"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode">
 		</activity>
 		<activity
 			android:name=".activities.ComposeMessageActivity"
+            android:excludeFromRecents="true"
 			android:launchMode="singleTop"
 			android:parentActivityName=".activities.HomeActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
@@ -242,50 +241,14 @@
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode"
 			android:exported="true">
-			<intent-filter android:label="@string/share_with_app">
-				<action android:name="android.intent.action.SEND"/>
-				<category android:name="android.intent.category.DEFAULT"/>
-				<data android:mimeType="text/plain"/>
-				<data android:mimeType="image/*"/>
-				<data android:mimeType="video/*"/>
-				<data android:mimeType="audio/*"/>
-				<data android:mimeType="application/*"/>
-				<data android:mimeType="*/*"/>
-			</intent-filter>
-			<intent-filter android:label="@string/share_with_app">
-				<action android:name="android.intent.action.SEND_MULTIPLE"/>
-				<category android:name="android.intent.category.DEFAULT"/>
-				<data android:mimeType="*/*"/>
-			</intent-filter>
-			<intent-filter android:label="@string/app_name">
-				<action android:name="android.intent.action.VIEW"/>
-				<action android:name="android.intent.action.SENDTO"/>
-				<category android:name="android.intent.category.DEFAULT"/>
-				<category android:name="android.intent.category.BROWSABLE"/>
-				<data android:scheme="sms"/>
-				<data android:scheme="smsto"/>
-				<data
-					android:host="compose"
-					android:scheme="${uriScheme}"/>
-			</intent-filter>
-			<intent-filter
-				android:label="@string/app_name"
-				android:autoVerify="true">
-				<action android:name="android.intent.action.VIEW"/>
-				<action android:name="android.intent.action.SENDTO"/>
-				<category android:name="android.intent.category.DEFAULT"/>
-				<category android:name="android.intent.category.BROWSABLE"/>
-				<data
-					android:host="${actionUrl}"
-					android:pathPrefix="/compose"
-					android:scheme="https"/>
-			</intent-filter>
+
 			<meta-data
 				android:name="android.service.chooser.chooser_target_service"
 				android:value="androidx.sharetarget.ChooserTargetServiceCompat" />
 		</activity>
 		<activity
 			android:name=".activities.RecipientListBaseActivity"
+            android:excludeFromRecents="true"
 			android:launchMode="singleTop"
 			android:parentActivityName=".activities.HomeActivity"
 			android:configChanges="uiMode"
@@ -293,11 +256,13 @@
 		</activity>
 		<activity
 			android:name=".preference.SettingsActivity"
+            android:excludeFromRecents="true"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.Settings">
 		</activity>
 		<activity
 			android:name=".preference.SettingsNotificationsDummyActivity"
+            android:excludeFromRecents="true"
 			android:label="@string/app_name"
 			android:exported="true">
 			<intent-filter>
@@ -307,6 +272,7 @@
 		</activity>
 		<activity
 			android:name=".preference.SettingsMediaDummyActivity"
+            android:excludeFromRecents="true"
 			android:exported="true">
 			<intent-filter>
 				<action android:name="android.intent.action.MANAGE_NETWORK_USAGE"/>
@@ -315,56 +281,41 @@
 		</activity>
 		<activity
 			android:name=".activities.ContactDetailActivity"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.TransparentStatusbar"
 			android:configChanges="uiMode" />
 		<activity
 			android:name=".activities.AboutActivity"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode" />
 		<activity
 			android:name=".activities.AddContactActivity"
+            android:excludeFromRecents="true"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:launchMode="singleTask"
 			android:theme="@style/Theme.Threema.Translucent"
 			android:exported="true">
-			<intent-filter android:label="@string/app_name">
-				<action android:name="android.intent.action.VIEW"/>
 
-				<category android:name="android.intent.category.DEFAULT"/>
-				<category android:name="android.intent.category.BROWSABLE"/>
-
-				<data
-					android:host="add"
-					android:scheme="${uriScheme}"/>
-			</intent-filter>
-			<intent-filter
-				android:label="@string/app_name"
-				android:autoVerify="true">
-				<action android:name="android.intent.action.VIEW"/>
-
-				<category android:name="android.intent.category.DEFAULT"/>
-				<category android:name="android.intent.category.BROWSABLE"/>
-
-				<data
-					android:host="${actionUrl}"
-					android:pathPrefix="/add"
-					android:scheme="https"/>
-			</intent-filter>
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.LicenseActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode" />
 		<activity
 			android:name=".activities.TermsOfServiceActivity"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode" />
 		<activity
 			android:name=".activities.EulaActivity"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode" />
 		<activity
 			android:name=".activities.ExportIDResultActivity"
+            android:excludeFromRecents="true"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:launchMode="singleTop"
 			android:parentActivityName=".activities.HomeActivity"
@@ -372,6 +323,7 @@
 		</activity>
 		<activity
 			android:name=".activities.ExportIDActivity"
+            android:excludeFromRecents="true"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:launchMode="singleTop"
 			android:theme="@style/Theme.Threema.Translucent"/>
@@ -384,30 +336,7 @@
 			android:theme="@style/Theme.Threema.Wizard"
 			android:windowSoftInputMode="adjustPan"
 			android:exported="true">
-			<intent-filter
-				android:label="@string/app_name"
-				android:priority="1000"
-				android:autoVerify="true">
-				<action android:name="android.intent.action.VIEW"/>
 
-				<category android:name="android.intent.category.DEFAULT"/>
-				<category android:name="android.intent.category.BROWSABLE"/>
-
-				<data
-					android:host="${actionUrl}"
-					android:pathPrefix="/license"
-					android:scheme="https"/>
-			</intent-filter>
-			<intent-filter>
-				<action android:name="android.intent.action.VIEW"/>
-
-				<category android:name="android.intent.category.DEFAULT"/>
-				<category android:name="android.intent.category.BROWSABLE"/>
-
-				<data
-					android:host="license"
-					android:scheme="${uriScheme}"/>
-			</intent-filter>
 		</activity>
 		<activity
 			android:name=".activities.UnlockMasterKeyActivity"
@@ -419,95 +348,117 @@
 			android:windowSoftInputMode="adjustNothing"/>
 		<activity
 			android:name=".activities.SupportActivity"
+            android:excludeFromRecents="true"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar"/>
 		<activity
 			android:name=".activities.PrivacyPolicyActivity"
+            android:excludeFromRecents="true"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar">
 		</activity>
 		<activity
 			android:name=".activities.ServerMessageActivity"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:label="server_message"/>
 		<activity
 			android:name=".activities.SendMediaActivity"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.MediaViewer"
 			android:windowSoftInputMode="stateHidden|adjustResize"/>
 		<activity
 			android:name=".activities.BackupAdminActivity"
+            android:excludeFromRecents="true"
 			android:configChanges="uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar">
 		</activity>
 		<activity
 			android:name=".activities.PinLockActivity"
+            android:excludeFromRecents="true"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar.NoAnim"
 			android:noHistory="true"
 			android:windowSoftInputMode="stateHidden|adjustResize"/>
 		<activity
 			android:name=".activities.GroupAddActivity"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode" />
 		<activity
 			android:name=".activities.GroupAdd2Activity"
+            android:excludeFromRecents="true"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.Translucent">
 		</activity>
 		<activity
 			android:name=".activities.GroupDetailActivity"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.TransparentStatusbar"
 			android:configChanges="uiMode"
 			android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
 		<activity
 			android:name=".qrscanner.activity.BaseQrScannerActivity"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.Translucent"/>
 		<activity
 			android:name=".grouplinks.AddGroupLinkBottomSheet"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.Translucent" />
 		<activity
 			android:name=".grouplinks.GroupLinkQrCodeActivity"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.WithToolbar"/>
 		<activity
 			android:name=".grouplinks.GroupLinkOverviewActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"/>
 		<activity
 			android:name=".grouplinks.OutgoingGroupRequestActivity"
+            android:excludeFromRecents="true"
 			android:parentActivityName=".activities.HomeActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"/>
 		<activity
 			android:name=".grouplinks.IncomingGroupRequestActivity"
+            android:excludeFromRecents="true"
 			android:parentActivityName=".activities.HomeActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"/>
 		<activity
 			android:name=".activities.DistributionListAddActivity"
+            android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.ExcludedSyncIdentitiesActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.BlackListActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.ProfilePicRecipientsActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.AddAccountActivity"
 			android:theme="@android:style/Theme.NoDisplay"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.MediaViewerActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.MediaViewer">
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.QRCodeZoomActivity"
 			android:noHistory="true"
 			android:theme="@style/Theme.Threema.Translucent"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.MediaGalleryActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar">
@@ -526,43 +477,53 @@
 			android:stateNotNeeded="true"
 			android:theme="@android:style/Theme.NoDisplay"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.ballot.BallotOverviewActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.ballot.BallotMatrixActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.ballot.BallotChooserActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar">
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.CropImageActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.ballot.BallotWizardActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".filepicker.FilePickerActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.StorageManagementActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.ContactNotificationsActivity"
 			android:launchMode="singleTop"
 			android:theme="@style/Theme.Threema.CircularReveal"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.GroupNotificationsActivity"
 			android:launchMode="singleTop"
 			android:theme="@style/Theme.Threema.CircularReveal"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.ImagePaintActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.MediaViewer"
@@ -570,6 +531,7 @@
 
 		<!-- Webclient activities -->
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".webclient.activities.SessionsActivity"
 			android:launchMode="singleTop"
 			android:parentActivityName=".activities.HomeActivity"
@@ -577,11 +539,13 @@
 			android:configChanges="uiMode">
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".webclient.activities.SessionsIntroActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="uiMode">
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".webclient.activities.WebDiagnosticsActivity"
 			android:parentActivityName=".activities.HomeActivity"
 			android:screenOrientation="sensorPortrait"
@@ -591,7 +555,9 @@
 		</activity>
 
 		<!-- MD activities -->
-		<activity android:name=".multidevice.LinkedDevicesActivity"
+		<activity
+            android:excludeFromRecents="true"
+            android:name=".multidevice.LinkedDevicesActivity"
 			android:launchMode="singleTop"
 			android:parentActivityName=".activities.HomeActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
@@ -609,32 +575,25 @@
 			android:theme="@style/Theme.Threema.TransparentStatusbar"
 			tools:ignore="LockedOrientationActivity"
 			android:exported="true">
-			<intent-filter android:label="@string/threema_call">
-				<action android:name="android.intent.action.VIEW"/>
 
-				<category android:name="android.intent.category.DEFAULT"/>
-			</intent-filter>
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".voip.activities.GroupCallActivity"
 			android:exported="false"
 			android:launchMode="singleTask"
 			android:taskAffinity=".voip.activities.GroupCallActivity"
-			android:excludeFromRecents="true"
 			android:theme="@style/Theme.Threema.TransparentStatusbar_Fullscreen" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".voip.activities.CallActionIntentActivity"
 			android:screenOrientation="sensorPortrait"
 			tools:ignore="LockedOrientationActivity"
 			android:exported="true">
-			<intent-filter tools:ignore="AppLinkUrlError">
-				<!-- Handle calls from phonebook -->
-				<action android:name="android.intent.action.VIEW"/>
-				<category android:name="android.intent.category.DEFAULT"/>
-				<data android:mimeType="${callMimeType}"/>
-			</intent-filter>
+
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".voip.activities.WebRTCDebugActivity"
 			android:parentActivityName=".activities.HomeActivity"
 			android:screenOrientation="sensorPortrait"
@@ -642,11 +601,13 @@
 			tools:ignore="LockedOrientationActivity">
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.WhatsNewActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:noHistory="true"
 			android:theme="@style/Theme.Threema.WhatsNew"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.WhatsNew2Activity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:noHistory="true"
@@ -654,151 +615,143 @@
 
 		<!-- Wizard activities -->
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.wizard.WizardIntroActivity"
 			android:screenOrientation="sensorPortrait"
 			android:theme="@style/Theme.Threema.Wizard"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.wizard.WizardStartActivity"
 			android:screenOrientation="sensorPortrait"
 			android:theme="@style/Theme.Threema.Wizard"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.wizard.WizardBaseActivity"
 			android:screenOrientation="sensorPortrait"
 			android:theme="@style/Theme.Threema.Wizard"
 			android:windowSoftInputMode="adjustResize"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.wizard.WizardFingerPrintActivity"
 			android:screenOrientation="sensorPortrait"
 			android:theme="@style/Theme.Threema.Wizard"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.wizard.WizardIDRestoreActivity"
 			android:screenOrientation="sensorPortrait"
 			android:theme="@style/Theme.Threema.Wizard"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.wizard.WizardSafeRestoreActivity"
 			android:screenOrientation="sensorPortrait"
 			android:theme="@style/Theme.Threema.Wizard"
 			android:windowSoftInputMode="stateAlwaysHidden"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.wizard.WizardBackupRestoreActivity"
 			android:screenOrientation="sensorPortrait"
 			android:theme="@style/Theme.Threema.Wizard"
 			android:windowSoftInputMode="stateAlwaysHidden"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.SMSVerificationLinkActivity"
 			android:theme="@android:style/Theme.NoDisplay"
 			android:exported="true" >
-			<intent-filter>
-				<action android:name="android.intent.action.VIEW"/>
 
-				<category android:name="android.intent.category.DEFAULT"/>
-				<category android:name="android.intent.category.BROWSABLE"/>
-
-				<data
-					android:host="link_mobileno"
-					android:scheme="${uriScheme}"/>
-			</intent-filter>
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.VoiceActionActivity"
 			android:exported="true">
-			<intent-filter>
-				<action android:name="com.google.android.voicesearch.SEND_MESSAGE_TO_CONTACTS"/>
 
-				<category android:name="android.intent.category.DEFAULT"/>
-
-				<data android:mimeType="text/plain"/>
-				<data android:mimeType="audio/wav"/>
-			</intent-filter>
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.DisableBatteryOptimizationsActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.Translucent"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.StickerSelectorActivity"
 			android:theme="@style/Theme.Threema.Transparent.Background"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.ImagePaintKeyboardActivity"
 			android:theme="@style/Theme.Threema.Transparent.Background"
 			android:windowSoftInputMode="adjustResize|stateAlwaysVisible"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.DownloadApkActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.Translucent"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".voicemessage.VoiceRecorderActivity"
 			android:theme="@style/Theme.Threema.Translucent"
 			android:configChanges="orientation|keyboardHidden|screenSize|screenLayout|uiMode"
 			android:clearTaskOnLaunch="true"
 			android:windowSoftInputMode="stateAlwaysHidden"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".locationpicker.LocationPickerActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:configChanges="orientation|keyboardHidden|screenSize|screenLayout|uiMode"
 			/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".mediaattacher.MediaAttachActivity"
 			android:theme="@style/Theme.MediaAttacher"
 			android:resizeableActivity="true"
 			android:windowSoftInputMode="adjustNothing"
 			android:configChanges="uiMode" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".mediaattacher.MediaSelectionActivity"
 			android:theme="@style/Theme.MediaAttacher"
 			android:resizeableActivity="true"
 			android:windowSoftInputMode="adjustNothing"
 			android:configChanges="uiMode" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.EditSendContactActivity"
 			android:theme="@style/Theme.Threema.Translucent"
 			android:resizeableActivity="true"
 			android:windowSoftInputMode="adjustResize"
 			android:configChanges="uiMode" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".threemasafe.ThreemaSafeConfigureActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:windowSoftInputMode="stateHidden|adjustResize"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.StopPassphraseServiceActivity"
 			android:autoRemoveFromRecents="true"
 			android:theme="@android:style/Theme.NoDisplay"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name="ch.threema.app.activities.DirectoryActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:windowSoftInputMode="adjustResize"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.BiometricLockActivity"
 			android:autoRemoveFromRecents="true"
 			android:theme="@style/Theme.Threema.BiometricUnlock">
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.AppLinksActivity"
 			android:autoRemoveFromRecents="true"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.Transparent.Background"
 			android:exported="true">
-			<intent-filter
-				android:label="@string/app_name"
-				android:autoVerify="true">
-				<action android:name="android.intent.action.VIEW"/>
 
-				<category android:name="android.intent.category.DEFAULT"/>
-				<category android:name="android.intent.category.BROWSABLE"/>
-
-				<data
-					android:scheme="https"
-					android:host="${contactActionUrl}"
-					android:pathPattern="/.*"/>
-				<data
-					android:scheme="https"
-					android:host="${groupLinkActionUrl}"
-					android:pathPattern="/join#\.*"/>
-			</intent-filter>
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".camera.CameraActivity"
 			android:screenOrientation="fullSensor"
 			android:autoRemoveFromRecents="true"
@@ -810,47 +763,51 @@
 				android:value="true" />
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name="ch.threema.app.globalsearch.GlobalSearchActivity"
 			android:theme="@style/Theme.Threema.Translucent"
 			android:windowSoftInputMode="adjustResize"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name="ch.threema.app.activities.StarredMessagesActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.StarredMessages"
 			android:windowSoftInputMode="adjustResize"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".locationpicker.LocationAutocompleteActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:windowSoftInputMode="adjustResize" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".archive.ArchiveActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:windowSoftInputMode="adjustResize" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.MapActivity"
 			android:configChanges="orientation|keyboardHidden|screenSize|screenLayout|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:exported="true">
-			<intent-filter>
-				<action android:name="android.intent.action.VIEW" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<category android:name="android.intent.category.BROWSABLE" />
-				<data android:scheme="geo" />
-			</intent-filter>
+
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.WorkExplainActivity"
 			android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
 			android:theme="@style/Theme.Threema.WithToolbar" />
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.VerificationLevelActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.TextChatBubbleActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:launchMode="singleTop"/>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".camera.QRScannerActivity"
 			android:clearTaskOnLaunch="true"
 			android:stateNotNeeded="true"
@@ -870,12 +827,14 @@
 			android:excludeFromRecents="true">
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.BackupRestoreProgressActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:launchMode="singleTask"
 			android:exported="false">
 		</activity>
 		<activity
+            android:excludeFromRecents="true"
 			android:name=".activities.ProblemSolverActivity"
 			android:theme="@style/Theme.Threema.WithToolbar"
 			android:launchMode="singleTop"/>

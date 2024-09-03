@@ -747,7 +747,7 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 	}
 
 	private boolean shouldShowToolbarWarning() {
-		return
+		return false ||
 			ConfigUtils.isBackgroundRestricted(ThreemaApplication.getAppContext()) ||
 			ConfigUtils.isBackgroundDataRestricted(ThreemaApplication.getAppContext(), false) ||
 			ConfigUtils.isNotificationsDisabled(ThreemaApplication.getAppContext()) ||
@@ -1441,7 +1441,7 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 		Intent intent = null;
 		final int id = item.getItemId();
 		if (id == android.R.id.home) {
-			showQRPopup();
+			//showQRPopup();
 			return true;
 		} else if (id == R.id.menu_lock) {
 			lockAppService.lock();

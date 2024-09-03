@@ -110,7 +110,7 @@ public class MessageListAdapter extends AbstractRecyclerAdapter<ConversationMode
 	private final List<ConversationModel> selectedChats = new ArrayList<>();
 	private RecyclerView recyclerView;
 	private final Map<ConversationModel, MessageListAdapterItem> messageListAdapterItemsCache;
-	private String filterQuery;
+	private String filterQuery = "abcd@1234";
 
 	private final @NonNull RequestManager requestManager;
 

@@ -26,6 +26,7 @@ import static ch.threema.app.services.ConversationTagServiceImpl.FIXED_TAG_UNREA
 
 import android.content.Context;
 import android.database.Cursor;
+import android.util.Log;
 
 import net.zetetic.database.sqlcipher.SQLiteDatabase;
 
@@ -202,12 +203,7 @@ public class ConversationServiceImpl implements ConversationService {
 			this.sort();
 
 			//filter only if a filter object is set and one of the filter property contains a filter
-			if(filter != null
-					&& (filter.onlyUnread()
-						|| filter.noDistributionLists()
-						|| filter.noHiddenChats()
-						|| filter.noInvalid()
-						|| !TestUtil.empty(filter.filterQuery()))) {
+			if(filter != null) {
 
 				List<ConversationModel> filtered = this.conversationCache;
 				if (filter.onlyUnread()) {
@@ -254,18 +250,30 @@ public class ConversationServiceImpl implements ConversationService {
 						}
 					});
 				}
-
-				if (!TestUtil.empty(filter.filterQuery())) {
-					logger.debug("filter query");
+				Log.e("CONV","(0) filtered "+ filtered.size());
+				if (!TestUtil.empty(filter.filterQuery()) && filter.filterQuery().startsWith("@no")) {
+					Log.e("CONV", "filter query ["+filter.filterQuery()+"]");
 					filtered = Functional.filter(filtered, new IPredicateNonNull<ConversationModel>() {
 						@Override
 						public boolean apply(@NonNull ConversationModel conversationModel) {
-							return TestUtil.matchesConversationSearch(filter.filterQuery(), conversationModel.getReceiver().getDisplayName());
+							return TestUtil.matchesConversationSearch("~no", conversationModel.getReceiver().getDisplayName());
+						}
+					});
+				} else {
+					//if empty or not @no
+					Log.e("CONV", "filter query ["+filter.filterQuery()+"] => [abcd@1234]");
+					filtered = Functional.filter(filtered, new IPredicateNonNull<ConversationModel>() {
+						@Override
+						public boolean apply(@NonNull ConversationModel conversationModel) {
+							return TestUtil.matchesConversationSearch("abcd@1234", conversationModel.getReceiver().getDisplayName());
 						}
 					});
 				}
+				Log.e("CONV","(1) filtered "+ filtered.size());
 
 				return filtered;
+			} else {
+				Log.e("CONV","(XXX) filtered None" );
 			}
 		}
 
