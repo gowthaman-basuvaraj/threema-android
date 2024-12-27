@@ -82,8 +82,8 @@ import ch.threema.app.services.LocaleServiceImpl;
 import ch.threema.app.services.LockAppService;
 import ch.threema.app.services.MessageService;
 import ch.threema.app.services.MessageServiceImpl;
-import ch.threema.app.services.NotificationService;
-import ch.threema.app.services.NotificationServiceImpl;
+import ch.threema.app.services.notification.NotificationService;
+import ch.threema.app.services.notification.NotificationServiceImpl;
 import ch.threema.app.services.PinLockService;
 import ch.threema.app.services.PreferenceService;
 import ch.threema.app.services.PreferenceServiceImpl;
@@ -95,8 +95,6 @@ import ch.threema.app.services.SensorService;
 import ch.threema.app.services.SensorServiceImpl;
 import ch.threema.app.services.ServerAddressProviderService;
 import ch.threema.app.services.ServerAddressProviderServiceImpl;
-import ch.threema.app.services.ServerMessageService;
-import ch.threema.app.services.ServerMessageServiceImpl;
 import ch.threema.app.services.SynchronizeContactsService;
 import ch.threema.app.services.SynchronizeContactsServiceImpl;
 import ch.threema.app.services.SystemScreenLockService;
@@ -231,7 +229,7 @@ public class ServiceManager {
 	private SystemScreenLockService systemScreenLockService;
 
 	@Nullable
-	private IdListService blackListService, excludedSyncIdentitiesService, profilePicRecipientsService;
+	private IdListService blockedContactsService, excludedSyncIdentitiesService, profilePicRecipientsService;
 	@Nullable
 	private DeadlineListService mutedChatsListService, hiddenChatListService, mentionOnlyChatsListService;
 	@Nullable
@@ -351,7 +349,7 @@ public class ServiceManager {
 				this.apiConnector.setVersion(ThreemaApplication.getAppVersion());
 				this.apiConnector.setLanguage(Locale.getDefault().getLanguage());
 
-				if (BuildFlavor.getLicenseType() == BuildFlavor.LicenseType.ONPREM) {
+				if (BuildFlavor.getCurrent().getLicenseType() == BuildFlavor.LicenseType.ONPREM) {
 					// On Premise always requires Basic authentication
 					PreferenceService preferenceService = this.getPreferenceService();
 					this.apiConnector.setAuthenticator(urlConnection -> {
@@ -453,7 +451,7 @@ public class ServiceManager {
 				this.getUserService(),
 				this.getIdentityStore(),
 				this.getPreferenceService(),
-				this.getBlackListService(),
+				this.getBlockedContactsService(),
 				this.getProfilePicRecipientsService(),
 				this.getRingtoneService(),
 				this.getMutedChatsListService(),
@@ -489,7 +487,8 @@ public class ServiceManager {
 					this.getApiService(),
 					this.getDownloadService(),
 					this.getHiddenChatsListService(),
-					this.getBlackListService()
+					this.getBlockedContactsService(),
+                    this.getModelRepositories().getEditHistory()
 			);
 		}
 
@@ -584,7 +583,7 @@ public class ServiceManager {
 	@NonNull
 	public LicenseService getLicenseService() throws FileSystemNotPresentException {
 		if(this.licenseService == null) {
-			switch(BuildFlavor.getLicenseType()) {
+			switch(BuildFlavor.getCurrent().getLicenseType()) {
 				case SERIAL:
 					this.licenseService = new LicenseServiceSerial(
 							this.getAPIConnector(),
@@ -773,6 +772,7 @@ public class ServiceManager {
 				this.getDistributionListService(),
 				this.getMessageService(),
 				this.getHiddenChatsListService(),
+				this.getBlockedContactsService(),
 				this.getConversationTagService()
 			);
 		}
@@ -818,8 +818,7 @@ public class ServiceManager {
 				this.getDeviceService(),
 				this.getFileService(),
 				this.getIdentityStore(),
-				this.getBlackListService(),
-				this.getLicenseService(),
+				this.getBlockedContactsService(),
 				this.getApiService()
 			);
 		}
@@ -828,11 +827,12 @@ public class ServiceManager {
 	}
 
 	@NonNull
-	public IdListService getBlackListService() {
-		if(this.blackListService == null) {
-			this.blackListService = new IdListServiceImpl("identity_list_blacklist", this.getPreferenceService());
+	public IdListService getBlockedContactsService() {
+		if(this.blockedContactsService == null) {
+            // Keep the uniqueListName `identity_list_blacklist` to avoid a migration of the key in the preferences
+			this.blockedContactsService = new IdListServiceImpl("identity_list_blacklist", this.getPreferenceService());
 		}
-		return this.blackListService;
+		return this.blockedContactsService;
 	}
 
 	@NonNull
@@ -937,7 +937,7 @@ public class ServiceManager {
 				this.getDistributionListService(),
 				this.getLocaleService(),
 				this.getFileService(),
-				this.getBlackListService(),
+				this.getBlockedContactsService(),
 				this.getExcludedSyncIdentitiesService(),
 				this.getProfilePicRecipientsService(),
 				this.getDatabaseServiceNew(),
@@ -1019,7 +1019,7 @@ public class ServiceManager {
 				this.getMessageService(),
 				this.getNotificationService(),
 				this.databaseServiceNew,
-				this.getBlackListService(),
+				this.getBlockedContactsService(),
 				this.getPreferenceService(),
 				this.getUserService(),
 				this.getHiddenChatsListService(),
@@ -1169,7 +1169,7 @@ public class ServiceManager {
 				getContactService(),
 				getContactStore(),
 				getIdentityStore(),
-				getBlackListService(),
+				getBlockedContactsService(),
 				getPreferenceService(),
 				this
 			);
@@ -1246,10 +1246,5 @@ public class ServiceManager {
 			.writeTimeout(ProtocolDefines.WRITE_TIMEOUT, TimeUnit.SECONDS)
 			.readTimeout(ProtocolDefines.READ_TIMEOUT, TimeUnit.SECONDS)
 			.build();
-	}
-
-	@NonNull
-	private ServerMessageService createServerMessageService() {
-		return new ServerMessageServiceImpl(getDatabaseServiceNew());
 	}
 }

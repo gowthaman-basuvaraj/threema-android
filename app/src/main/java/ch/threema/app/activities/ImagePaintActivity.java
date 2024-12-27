@@ -371,13 +371,13 @@ public class ImagePaintActivity extends ThreemaToolbarActivity implements Generi
 			switch (requestCode) {
 				case REQUEST_CODE_STICKER_SELECTOR:
 					final String stickerPath = data.getStringExtra(StickerSelectorActivity.EXTRA_STICKER_PATH);
-					if (!TestUtil.empty(stickerPath)) {
+					if (!TestUtil.isEmptyOrNull(stickerPath)) {
 						addSticker(stickerPath);
 					}
 					break;
 				case REQUEST_CODE_ENTER_TEXT:
 					final String text = data.getStringExtra(ImagePaintKeyboardActivity.INTENT_EXTRA_TEXT);
-					if (!TestUtil.empty(text)) {
+					if (!TestUtil.isEmptyOrNull(text)) {
 						addText(text);
 					}
 			}
@@ -941,26 +941,26 @@ public class ImagePaintActivity extends ThreemaToolbarActivity implements Generi
 				break;
 		}
 
-		ConfigUtils.tintMenuItem(this, drawParentItem, R.attr.colorOnSurface);
-		ConfigUtils.tintMenuItem(this, paintItem, R.attr.colorOnSurface);
-		ConfigUtils.tintMenuItem(this, pencilItem, R.attr.colorOnSurface);
-		ConfigUtils.tintMenuItem(this, highlighterItem, R.attr.colorOnSurface);
+		ConfigUtils.tintMenuIcon(this, drawParentItem, R.attr.colorOnSurface);
+		ConfigUtils.tintMenuIcon(this, paintItem, R.attr.colorOnSurface);
+		ConfigUtils.tintMenuIcon(this, pencilItem, R.attr.colorOnSurface);
+		ConfigUtils.tintMenuIcon(this, highlighterItem, R.attr.colorOnSurface);
 
 		if (motionView.getSelectedEntity() == null) {
 			// no selected entities => draw mode or neutral mode
 			if (paintView.getActive()) {
 				switch (this.strokeMode) {
 					case STROKE_MODE_PENCIL:
-						ConfigUtils.tintMenuItem(pencilItem, this.penColor);
+						ConfigUtils.tintMenuIcon(pencilItem, this.penColor);
 						break;
 					case STROKE_MODE_HIGHLIGHTER:
-						ConfigUtils.tintMenuItem(highlighterItem, this.penColor);
+						ConfigUtils.tintMenuIcon(highlighterItem, this.penColor);
 						break;
 					default:
-						ConfigUtils.tintMenuItem(paintItem, this.penColor);
+						ConfigUtils.tintMenuIcon(paintItem, this.penColor);
 						break;
 				}
-				ConfigUtils.tintMenuItem(drawParentItem, this.penColor);
+				ConfigUtils.tintMenuIcon(drawParentItem, this.penColor);
 			}
 		}
 		undoItem.setVisible(hasChanges());
@@ -1002,7 +1002,7 @@ public class ImagePaintActivity extends ThreemaToolbarActivity implements Generi
 			cropItem.setVisible(true);
 		}
 
-		ConfigUtils.addIconsToOverflowMenu(this, menu);
+		ConfigUtils.addIconsToOverflowMenu(menu);
 
 		return true;
 	}

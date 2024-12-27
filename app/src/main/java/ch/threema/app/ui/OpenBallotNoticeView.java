@@ -46,7 +46,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.appcompat.view.menu.MenuBuilder;
 import androidx.appcompat.view.menu.MenuPopupHelper;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -392,7 +391,7 @@ public class OpenBallotNoticeView extends ConstraintLayout implements DefaultLif
 			SpannableString s = new SpannableString(highlightItem.getTitle());
 			s.setSpan(new ForegroundColorSpan(highlightColor), 0, s.length(), 0);
 			highlightItem.setTitle(s);
-			ConfigUtils.tintMenuItem(highlightItem, highlightColor);
+			ConfigUtils.tintMenuIcon(highlightItem, highlightColor);
 
 			menuBuilder.setCallback(new MenuBuilder.Callback() {
 				@Override
@@ -594,7 +593,7 @@ public class OpenBallotNoticeView extends ConstraintLayout implements DefaultLif
 		private String getText(boolean isMine, int votes, int participants) {
 			String name = ballot.getName();
 
-			if (TestUtil.empty(name)) {
+			if (TestUtil.isEmptyOrNull(name)) {
 				name = getContext().getString(R.string.ballot_placeholder);
 			} else {
 				if (name.length() > MAX_BALLOT_TITLE_LENGTH) {

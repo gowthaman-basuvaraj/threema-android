@@ -234,6 +234,13 @@ class MessageListViewHolder(
         }
     }
 
+    fun initializeMessageListItemDateView(item: MessageListAdapterItem) {
+        dateView.text = item.latestMessageDate
+        dateView.contentDescription = item.latestMessageDateContentDescription
+        dateView.visibility = VISIBLE
+        TextViewCompat.setTextAppearance(dateView, R.style.Threema_TextAppearance_List_ThirdLine)
+    }
+
     @SuppressLint("SimpleDateFormat")
     private fun initializeMessageListView(messageListAdapterItem: MessageListAdapterItem) {
         // Show or hide pin tag
@@ -339,10 +346,7 @@ class MessageListViewHolder(
 
     private fun initializeLatestMessage(messageListAdapterItem: MessageListAdapterItem) {
         // Set the date of the latest message
-        dateView.text = messageListAdapterItem.latestMessageDate
-        dateView.contentDescription = messageListAdapterItem.latestMessageDateContentDescription
-        dateView.visibility = VISIBLE
-        TextViewCompat.setTextAppearance(dateView, R.style.Threema_TextAppearance_List_ThirdLine)
+        initializeMessageListItemDateView(messageListAdapterItem)
 
         val viewElement = messageListAdapterItem.latestMessageViewElement
         // Configure subject
@@ -366,9 +370,10 @@ class MessageListViewHolder(
         dateView.contentDescription = null
     }
 
-    private fun initializeDeliveryView(messageListAdapterItem: MessageListAdapterItem,
-                                       isHiddenChat: Boolean,
-                                       hasDraft: Boolean
+    private fun initializeDeliveryView(
+        messageListAdapterItem: MessageListAdapterItem,
+        isHiddenChat: Boolean,
+        hasDraft: Boolean
     ) {
         if (isHiddenChat || hasDraft) {
             deliveryView.visibility = GONE
@@ -395,7 +400,12 @@ class MessageListViewHolder(
                 if (messageListAdapterItem.latestMessage != null) {
                     // In case there is a latest message but no icon is set, we need to get the
                     // icon for the current message state
-                    params.stateBitmapUtil?.setStateDrawable(context, messageListAdapterItem.latestMessage, deliveryView, false)
+                    params.stateBitmapUtil?.setStateDrawable(
+                        context,
+                        messageListAdapterItem.latestMessage,
+                        deliveryView,
+                        ConfigUtils.getColorFromAttribute(context, R.attr.colorOnSurface)
+                    )
                 } else {
                     deliveryView.visibility = GONE
                 }

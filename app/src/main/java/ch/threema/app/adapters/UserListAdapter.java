@@ -70,7 +70,7 @@ public class UserListAdapter extends FilterableListAdapter {
 	private final List<ContactModel> originalValues;
 	private UserListFilter userListFilter;
 	private final ContactService contactService;
-	private final IdListService blacklistService;
+	private final IdListService blockedContactsService;
 	private final DeadlineListService hiddenChatsListService;
 	private final FilterResultsListener filterResultsListener;
 	private final @NonNull RequestManager requestManager;
@@ -81,7 +81,7 @@ public class UserListAdapter extends FilterableListAdapter {
 		@Nullable final List<String> preselectedIdentities,
 		final List<Integer> checkedItems,
 		ContactService contactService,
-		IdListService blacklistService,
+		IdListService blockedContactsService,
 		DeadlineListService hiddenChatsListService,
 		PreferenceService preferenceService,
 		FilterResultsListener filterResultsListener,
@@ -92,7 +92,7 @@ public class UserListAdapter extends FilterableListAdapter {
 		this.context = context;
 		this.contactService = contactService;
 		this.hiddenChatsListService = hiddenChatsListService;
-		this.blacklistService = blacklistService;
+		this.blockedContactsService = blockedContactsService;
 		this.filterResultsListener = filterResultsListener;
 		this.requestManager = requestManager;
 
@@ -168,7 +168,7 @@ public class UserListAdapter extends FilterableListAdapter {
 
 		ViewUtil.show(
 				holder.blockedView,
-				blacklistService != null && blacklistService.has(contactModel.getIdentity())
+				blockedContactsService != null && blockedContactsService.has(contactModel.getIdentity())
 		);
 
 		holder.verificationLevelView.setContactModel(contactModel);
@@ -185,7 +185,7 @@ public class UserListAdapter extends FilterableListAdapter {
 
 		ViewUtil.show(
 				holder.lastMessageView,
-				!TestUtil.empty(lastMessageDateString));
+				!TestUtil.isEmptyOrNull(lastMessageDateString));
 
 		// load avatars asynchronously
 		AvatarListItemUtil.loadAvatar(
@@ -246,7 +246,7 @@ public class UserListAdapter extends FilterableListAdapter {
 		protected void publishResults(CharSequence constraint, FilterResults results) {
 			values = (List<ContactModel>) results.values;
 			if (filterResultsListener != null) {
-				filterResultsListener.onResultsAvailable(TestUtil.empty(constraint) ? 0 : results.count);
+				filterResultsListener.onResultsAvailable(TestUtil.isBlankOrNull(constraint) ? 0 : results.count);
 			}
 			notifyDataSetChanged();
 		}

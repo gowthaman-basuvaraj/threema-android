@@ -85,9 +85,9 @@ open class MessageProcessorProvider {
     protected val myContact: TestContact = TestHelpers.TEST_CONTACT
     protected val contactA = TestContact("12345678")
     protected val contactB = TestContact("ABCDEFGH")
-    protected val contactC = TestContact("SX96PM5A")
+    protected val contactC = TestContact("TESTTEST")
 
-    protected val myGroup = TestGroup(GroupId(0), myContact, listOf(myContact, contactA), "MyGroup")
+    protected val myGroup = TestGroup(GroupId(0), myContact, listOf(myContact, contactA, contactB), "MyGroup")
     protected val myGroupWithProfilePicture =
         TestGroup(
             GroupId(1),
@@ -351,7 +351,8 @@ open class MessageProcessorProvider {
             distributionListModelFactory.deleteAll()
             distributionListMemberModelFactory.deleteAll()
             distributionListMessageModelFactory.deleteAll()
-            groupRequestSyncLogModelFactory.deleteAll()
+            outgoingGroupSyncRequestLogModelFactory.deleteAll()
+            incomingGroupSyncRequestLogModelFactory.deleteAll()
             ballotModelFactory.deleteAll()
             ballotChoiceModelFactory.deleteAll()
             ballotVoteModelFactory.deleteAll()
@@ -379,7 +380,7 @@ open class MessageProcessorProvider {
         )
 
         // Unblock contacts
-        serviceManager.blackListService.removeAll()
+        serviceManager.blockedContactsService.removeAll()
     }
 
     private fun setTaskManager(taskManager: TaskManager) {
@@ -486,7 +487,7 @@ open class MessageProcessorProvider {
                 it.contactService,
                 it.contactStore,
                 it.identityStore,
-                it.blackListService,
+                it.blockedContactsService,
                 it.preferenceService,
                 it
             )

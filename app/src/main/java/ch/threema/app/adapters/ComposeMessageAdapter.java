@@ -24,6 +24,7 @@ package ch.threema.app.adapters;
 import static ch.threema.domain.protocol.csp.messages.file.FileData.RENDERING_DEFAULT;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.text.TextUtils;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
@@ -508,15 +509,15 @@ public class ComposeMessageAdapter extends ArrayAdapter<AbstractMessageModel> {
 					holder.secondaryTextView = itemView.findViewById(R.id.secondary_text_view);
 					holder.seekBar = itemView.findViewById(R.id.seek);
 					holder.tertiaryTextView = itemView.findViewById(R.id.tertiaryTextView);
-					holder.size = itemView.findViewById(R.id.document_size_view);
-					holder.controller = itemView.findViewById(R.id.controller);
+                    holder.size = itemView.findViewById(R.id.document_size_view);
+                    holder.controller = itemView.findViewById(R.id.controller);
 					holder.quoteBar = itemView.findViewById(R.id.quote_bar);
 					holder.quoteThumbnail = itemView.findViewById(R.id.quote_thumbnail);
 					holder.quoteTypeImage = itemView.findViewById(R.id.quote_type_image);
 					holder.transcoderView = itemView.findViewById(R.id.transcoder_view);
 					holder.readOnContainer = itemView.findViewById(R.id.read_on_container);
 					holder.readOnButton = itemView.findViewById(R.id.read_on_button);
-					holder.messageTypeButton = itemView.findViewById(R.id.message_type_button);
+					holder.audioMessageIcon = itemView.findViewById(R.id.audio_message_icon);
 					holder.groupAckContainer = itemView.findViewById(R.id.groupack_container);
 					holder.groupAckThumbsUpCount = itemView.findViewById(R.id.groupack_thumbsup_count);
 					holder.groupAckThumbsDownCount = itemView.findViewById(R.id.groupack_thumbsdown_count);
@@ -873,12 +874,12 @@ public class ComposeMessageAdapter extends ArrayAdapter<AbstractMessageModel> {
 						} else if (messageModel.getType() == MessageType.FILE) {
 							String searchString = "";
 
-							if (messageModel.getFileData().getRenderingType() == RENDERING_DEFAULT && !TestUtil.empty(messageModel.getFileData().getFileName())) {
+							if (messageModel.getFileData().getRenderingType() == RENDERING_DEFAULT && !TestUtil.isEmptyOrNull(messageModel.getFileData().getFileName())) {
 								// do not index filename for RENDERING_MEDIA or RENDERING_STICKER as it's not visible in the UI
 								searchString += messageModel.getFileData().getFileName();
 							}
 
-							if (!TestUtil.empty(messageModel.getFileData().getCaption())) {
+							if (!TestUtil.isEmptyOrNull(messageModel.getFileData().getCaption())) {
 								searchString += messageModel.getFileData().getCaption();
 							}
 
@@ -886,7 +887,7 @@ public class ComposeMessageAdapter extends ArrayAdapter<AbstractMessageModel> {
 								resultMap.put(index, position);
 								index++;
 							}
-						} else if (!TestUtil.empty(messageModel.getCaption())) {
+						} else if (!TestUtil.isEmptyOrNull(messageModel.getCaption())) {
 							if (messageModel.getCaption().toLowerCase().contains(filterString.toLowerCase())) {
 								resultMap.put(index, position);
 								index++;

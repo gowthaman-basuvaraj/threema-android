@@ -1,3 +1,1 @@
-* Verbesserte Darstellung von Umfragen mit grossen Schriftarten
-* Behebung eines Fehlers bei der Chatreihenfolge im Web-Client
-* Verbesserungen und Behebung verschiedener Fehler
+- Behebung eines Fehlers des Updaters der Shop Version

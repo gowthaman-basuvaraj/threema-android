@@ -55,6 +55,8 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.AnyThread;
+import androidx.annotation.ColorInt;
+import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
@@ -128,7 +130,7 @@ import ch.threema.app.services.DeviceService;
 import ch.threema.app.services.FileService;
 import ch.threema.app.services.LockAppService;
 import ch.threema.app.services.MessageService;
-import ch.threema.app.services.NotificationService;
+import ch.threema.app.services.notification.NotificationService;
 import ch.threema.app.services.PassphraseService;
 import ch.threema.app.services.PreferenceService;
 import ch.threema.app.services.ThreemaPushService;
@@ -221,6 +223,8 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 	private ConversationService conversationService;
 	private GroupCallManager groupCallManager;
 
+    private @Nullable IdentityPopup identityPopup = null;
+
 	private enum UnsentMessageAction {
 		ADD,
 		REMOVE,
@@ -244,16 +248,17 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 		public void onReceive(Context context, final Intent intent) {
 			RuntimeUtil.runOnUiThread(() -> {
 				if (IntentDataUtil.ACTION_LICENSE_NOT_ALLOWED.equals(intent.getAction())) {
-					if (BuildFlavor.getLicenseType() == BuildFlavor.LicenseType.SERIAL ||
-						BuildFlavor.getLicenseType() == BuildFlavor.LicenseType.GOOGLE_WORK ||
-						BuildFlavor.getLicenseType() == BuildFlavor.LicenseType.HMS_WORK ||
-						BuildFlavor.getLicenseType() == BuildFlavor.LicenseType.ONPREM) {
+                    BuildFlavor.LicenseType currentLicenseType = BuildFlavor.getCurrent().getLicenseType();
+                    if (currentLicenseType == BuildFlavor.LicenseType.SERIAL ||
+                        currentLicenseType == BuildFlavor.LicenseType.GOOGLE_WORK ||
+                        currentLicenseType == BuildFlavor.LicenseType.HMS_WORK ||
+                        currentLicenseType == BuildFlavor.LicenseType.ONPREM) {
 						//show enter serial stuff
 						startActivityForResult(new Intent(HomeActivity.this, EnterSerialActivity.class), ThreemaActivity.ACTIVITY_ID_ENTER_SERIAL);
 					} else {
 						showErrorTextAndExit(IntentDataUtil.getMessage(intent));
 					}
-				} else if (IntentDataUtil.ACTION_UPDATE_AVAILABLE.equals(intent.getAction()) && BuildFlavor.maySelfUpdate() && userService != null && userService.hasIdentity()) {
+				} else if (IntentDataUtil.ACTION_UPDATE_AVAILABLE.equals(intent.getAction()) && BuildFlavor.getCurrent().getMaySelfUpdate() && userService != null && userService.hasIdentity()) {
 					logger.info("App update available. Opening DownloadApkActivity.");
 					new Handler().postDelayed(() -> {
 						Intent dialogIntent = new Intent(intent);
@@ -585,7 +590,10 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 						BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
 						if (bottomNavigationView != null) {
 							BadgeDrawable badgeDrawable = bottomNavigationView.getOrCreateBadge(R.id.contacts);
-							badgeDrawable.setBackgroundColor(ConfigUtils.getAccentColor(HomeActivity.this));
+                            // the contacts tab item badge uses custom colors (normally badges are red)
+                            badgeDrawable.setBackgroundColor(
+                                getContactsTabBadgeColor(bottomNavigationView.getSelectedItemId())
+                            );
 							if (badgeDrawable.getVerticalOffset() == 0) {
 								badgeDrawable.setVerticalOffset(getResources().getDimensionPixelSize(R.dimen.bottom_nav_badge_offset_vertical));
 							}
@@ -766,11 +774,11 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 			ConfigUtils.isBackgroundDataRestricted(ThreemaApplication.getAppContext(), false) ||
 			ConfigUtils.isNotificationsDisabled(ThreemaApplication.getAppContext()) ||
 			(preferenceService.isCallsEnabled() && ConfigUtils.isFullScreenNotificationsDisabled(ThreemaApplication.getAppContext())) ||
-			((preferenceService.useThreemaPush() || BuildFlavor.forceThreemaPush()) && !PowermanagerUtil.isIgnoringBatteryOptimizations(ThreemaApplication.getAppContext()));
+			((preferenceService.useThreemaPush() || BuildFlavor.getCurrent().getForceThreemaPush()) && !PowermanagerUtil.isIgnoringBatteryOptimizations(ThreemaApplication.getAppContext()));
 	}
 
 	private void showWhatsNew() {
-		final boolean skipWhatsNew = true; // set this to false if you want to show a What's New screen
+		final boolean skipWhatsNew = false; // set this to false if you want to show a What's New screen
 
 		if (preferenceService != null) {
 			if (!preferenceService.isLatestVersion(this)) {
@@ -785,12 +793,12 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 					if (skipWhatsNew) {
 						isWhatsNewShown = false; // make sure isWhatsNewShown is set to false here if whatsnew is skipped - otherwise pin unlock will not be shown once
 					} else {
-						int previous = preferenceService.getLatestVersion() % 1000;
+						int previous = preferenceService.getLatestVersion() % 10000;
 
 						// To not show the same dialog twice, it is only shown if the previous version
 						// is prior to the first version that used this dialog.
 						// Use the version code of the first version where this dialog should be shown.
-						if (previous < 925) { // do not show to users of previous release candidate
+						if (previous < 1010) {
 							isWhatsNewShown = true;
 
 							Intent intent = new Intent(this, WhatsNewActivity.class);
@@ -798,9 +806,9 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 							overridePendingTransition(R.anim.abc_fade_in, R.anim.abc_fade_out);
 						}
 					}
-					preferenceService.setLatestVersion(this);
 				}
-			}
+                preferenceService.setLatestVersion(this);
+            }
 		}
 	}
 
@@ -832,11 +840,17 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 	private void showQRPopup() {
 		int[] location = getMiniAvatarLocation();
 
-		IdentityPopup identityPopup = new IdentityPopup(this);
-		identityPopup.show(this, toolbar, location, () -> {
-			// show profile fragment
-			bottomNavigationView.post(() -> bottomNavigationView.findViewById(R.id.my_profile).performClick());
-		});
+		identityPopup = new IdentityPopup(this);
+        identityPopup.show(
+            this,
+            toolbar,
+            location,
+            () -> {
+			    // show profile fragment
+			    bottomNavigationView.post(() -> bottomNavigationView.findViewById(R.id.my_profile).performClick());
+		    },
+            () -> identityPopup = null
+        );
 	}
 
 	private int[] getMiniAvatarLocation() {
@@ -881,7 +895,7 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 		if (serviceManager != null) {
 			DeviceService deviceService = serviceManager.getDeviceService();
 
-			if (deviceService != null && deviceService.isOnline()) {
+			if (deviceService.isOnline()) {
 				//start check directly
 				CheckLicenseRoutine check;
 				try {
@@ -932,6 +946,10 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 		logger.info("onDestroy");
 
 		ThreemaApplication.activityDestroyed(this);
+
+        if (identityPopup != null) {
+            identityPopup.dismiss();
+        }
 
 		try {
 			if (this.currentCheckAppReceiver != null) {
@@ -988,12 +1006,12 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 				try {
 					updateSystemService.update(new UpdateSystemService.OnSystemUpdateRun() {
 						@Override
-						public void onStart(final UpdateSystemService.SystemUpdate systemUpdate) {
+						public void onStart(@NonNull final UpdateSystemService.SystemUpdate systemUpdate) {
 							logger.info("Running update to " + systemUpdate.getText());
 						}
 
 						@Override
-						public void onFinished(UpdateSystemService.SystemUpdate systemUpdate, boolean success) {
+						public void onFinished(@NonNull UpdateSystemService.SystemUpdate systemUpdate, boolean success) {
 							if (success) {
 								logger.info("System updated to " + systemUpdate.getText());
 							} else {
@@ -1141,7 +1159,7 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 
 		// Checks on app start
 		if (isAppStart) {
-			if (BuildFlavor.forceThreemaPush()) {
+			if (BuildFlavor.getCurrent().getForceThreemaPush()) {
 				preferenceService.setUseThreemaPush(true);
 			} else if (!preferenceService.useThreemaPush() && !PushService.servicesInstalled(this)) {
 				// If a non-libre build of Threema cannot find push services, fall back to Threema Push
@@ -1261,6 +1279,12 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 		this.bottomNavigationView = findViewById(R.id.bottom_navigation);
 		this.bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
 			showMainContent();
+
+            // the contacts tab item badge uses custom colors (normally badges are red)
+            final @Nullable BadgeDrawable badgeDrawableContacts = bottomNavigationView.getBadge(R.id.contacts);
+            if (badgeDrawableContacts != null) {
+                badgeDrawableContacts.setBackgroundColor(getContactsTabBadgeColor(item.getItemId()));
+            }
 
 			Fragment currentFragment = getSupportFragmentManager().findFragmentByTag(currentFragmentTag);
 			if (currentFragment != null) {
@@ -1449,7 +1473,7 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.activity_home, menu);
 
-		ConfigUtils.addIconsToOverflowMenu(this, menu);
+		ConfigUtils.addIconsToOverflowMenu(menu);
 
 		return true;
 	}
@@ -1554,7 +1578,7 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 					privateChatToggleMenuItem.setIcon(R.drawable.ic_outline_visibility_off);
 					privateChatToggleMenuItem.setTitle(R.string.title_hide_private_chats);
 				}
-				ConfigUtils.tintMenuItem(this, privateChatToggleMenuItem, R.attr.colorOnSurface);
+				ConfigUtils.tintMenuIcon(this, privateChatToggleMenuItem, R.attr.colorOnSurface);
 			}
 
 			Boolean addDisabled;
@@ -1691,7 +1715,7 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 
 			@Override
 			protected void onPostExecute(String result) {
-				if (!TestUtil.empty(result)) {
+				if (!TestUtil.isEmptyOrNull(result)) {
 					SimpleStringAlertDialog.newInstance(R.string.an_error_occurred, result).show(getSupportFragmentManager(), "le");
 				}
 			}
@@ -2001,6 +2025,23 @@ public class HomeActivity extends ThreemaAppCompatActivity implements
 			launchThreemaChannelChat();
 		}
 	}
+
+    /**
+     * @return The correct color to ensure contrast. If the navigation bar item is <strong>not</strong> selected, we use the {@code onSurfaceVariant}
+     * because the material library paints icons in {@code onSurfaceVariant}. So we match. If the item is selected, we have to use
+     * {@code onPrimaryContainer} since we customized our navigation bar active indicator to have the color of {@code primaryContainer}.
+     *
+     * @see "@style/Threema.BottomNavigationView"
+     */
+    @ColorInt
+    private int getContactsTabBadgeColor(@IdRes int currentlySelectedMenuItemId) {
+        return ConfigUtils.getColorFromAttribute(
+            HomeActivity.this,
+            currentlySelectedMenuItemId == R.id.contacts
+                ? R.attr.colorOnPrimaryContainer
+                : R.attr.colorOnSurfaceVariant
+        );
+    }
 
 	@Override
 	protected void onSaveInstanceState(@NonNull Bundle outState) {

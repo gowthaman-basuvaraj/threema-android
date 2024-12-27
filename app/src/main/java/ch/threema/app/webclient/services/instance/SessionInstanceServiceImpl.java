@@ -428,13 +428,13 @@ public class SessionInstanceServiceImpl implements SessionInstanceService {
 			createDispatcher,
 			services.message,
 			services.lifetime,
-			services.blackList));
+			services.blockedContactsService));
 		createDispatcher.addReceiver(new FileMessageCreateHandler(
 			createDispatcher,
 			services.message,
 			services.file,
 			services.lifetime,
-			services.blackList));
+			services.blockedContactsService));
 
 		createDispatcher.addReceiver(new CreateContactHandler(
 			createDispatcher,
@@ -481,9 +481,7 @@ public class SessionInstanceServiceImpl implements SessionInstanceService {
 			services.contact,
 			services.group,
 			services.conversation,
-			services.conversationTag,
-			services.message,
-			services.notification
+			services.conversationTag
 		));
 
 		deleteDispatcher.addReceiver(new DeleteMessageHandler(
