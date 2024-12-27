@@ -208,12 +208,7 @@ public class ConversationServiceImpl implements ConversationService {
             this.sort();
 
             //filter only if a filter object is set and one of the filter property contains a filter
-            if (filter != null
-                && (filter.onlyUnread()
-                || filter.noDistributionLists()
-                || filter.noHiddenChats()
-                || filter.noInvalid()
-                || !TestUtil.isEmptyOrNull(filter.filterQuery()))) {
+            if (filter != null) {
 
                 List<ConversationModel> filtered = this.conversationCache;
                 if (filter.onlyUnread()) {
