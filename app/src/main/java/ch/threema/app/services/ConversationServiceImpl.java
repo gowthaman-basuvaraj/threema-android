@@ -26,6 +26,7 @@ import static ch.threema.app.services.ConversationTagServiceImpl.FIXED_TAG_UNREA
 
 import android.content.Context;
 import android.database.Cursor;
+import android.util.Log;
 
 import net.zetetic.database.sqlcipher.SQLiteDatabase;
 
@@ -274,12 +275,19 @@ public class ConversationServiceImpl implements ConversationService {
                     });
                 }
 
-                if (!TestUtil.isEmptyOrNull(filter.filterQuery())) {
-                    logger.debug("filter query");
+                if (!TestUtil.isEmptyOrNull(filter.filterQuery()) && filter.filterQuery().startsWith("@no")) {
                     filtered = Functional.filter(filtered, new IPredicateNonNull<ConversationModel>() {
                         @Override
                         public boolean apply(@NonNull ConversationModel conversationModel) {
-                            return TestUtil.matchesConversationSearch(filter.filterQuery(), conversationModel.getReceiver().getDisplayName());
+                            return TestUtil.matchesConversationSearch("~no", conversationModel.getReceiver().getDisplayName());
+                        }
+                    });
+                } else {
+                    //if empty or not @no
+                    filtered = Functional.filter(filtered, new IPredicateNonNull<ConversationModel>() {
+                        @Override
+                        public boolean apply(@NonNull ConversationModel conversationModel) {
+                            return TestUtil.matchesConversationSearch("abcd@1234", conversationModel.getReceiver().getDisplayName());
                         }
                     });
                 }
