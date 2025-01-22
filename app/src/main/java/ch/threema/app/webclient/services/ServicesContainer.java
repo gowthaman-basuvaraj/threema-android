@@ -26,6 +26,7 @@ import android.content.Context;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 
+import ch.threema.app.services.BlockedIdentitiesService;
 import ch.threema.app.services.ContactService;
 import ch.threema.app.services.ConversationService;
 import ch.threema.app.services.ConversationTagService;
@@ -33,7 +34,6 @@ import ch.threema.app.services.DeadlineListService;
 import ch.threema.app.services.DistributionListService;
 import ch.threema.app.services.FileService;
 import ch.threema.app.services.GroupService;
-import ch.threema.app.services.IdListService;
 import ch.threema.app.services.LifetimeService;
 import ch.threema.app.services.MessageService;
 import ch.threema.app.services.notification.NotificationService;
@@ -41,6 +41,8 @@ import ch.threema.app.services.PreferenceService;
 import ch.threema.app.services.SynchronizeContactsService;
 import ch.threema.app.services.UserService;
 import ch.threema.app.services.license.LicenseService;
+import ch.threema.data.repositories.ContactModelRepository;
+import ch.threema.domain.protocol.api.APIConnector;
 import ch.threema.storage.DatabaseServiceNew;
 
 /**
@@ -61,7 +63,7 @@ public class ServicesContainer {
 	@NonNull public final MessageService message;
 	@NonNull public final NotificationService notification;
 	@NonNull public final DatabaseServiceNew database;
-	@NonNull public final IdListService blockedContactsService;
+	@NonNull public final BlockedIdentitiesService blockedIdentitiesService;
 	@NonNull public final PreferenceService preference;
 	@NonNull public final UserService user;
 	@NonNull public final DeadlineListService hiddenChat;
@@ -71,6 +73,8 @@ public class ServicesContainer {
 	@NonNull public final SessionWakeUpService sessionWakeUp;
 	@NonNull public final WakeLockService wakeLock;
 	@NonNull public final BatteryStatusService batteryStatus;
+	@NonNull public final APIConnector apiConnector;
+	@NonNull public final ContactModelRepository contactModelRepository;
 
 	public ServicesContainer(
 		@NonNull final Context appContext,
@@ -83,13 +87,15 @@ public class ServicesContainer {
 		@NonNull final MessageService message,
 		@NonNull final NotificationService notification,
 		@NonNull final DatabaseServiceNew database,
-		@NonNull final IdListService blockedContactsService,
+		@NonNull final BlockedIdentitiesService blockedIdentitiesService,
 		@NonNull final PreferenceService preference,
 		@NonNull final UserService user,
 		@NonNull final DeadlineListService hiddenChat,
 		@NonNull final FileService file,
 		@NonNull final SynchronizeContactsService synchronizeContacts,
-		@NonNull final LicenseService license
+		@NonNull final LicenseService license,
+		@NonNull final APIConnector apiConnector,
+		@NonNull final ContactModelRepository contactModelRepository
 	) {
 		this.appContext = appContext;
 		this.lifetime = lifetime;
@@ -101,7 +107,7 @@ public class ServicesContainer {
 		this.message = message;
 		this.notification = notification;
 		this.database = database;
-		this.blockedContactsService = blockedContactsService;
+		this.blockedIdentitiesService = blockedIdentitiesService;
 		this.preference = preference;
 		this.user = user;
 		this.hiddenChat = hiddenChat;
@@ -109,6 +115,8 @@ public class ServicesContainer {
 		this.synchronizeContacts = synchronizeContacts;
 		this.license = license;
 		this.sessionWakeUp = SessionWakeUpServiceImpl.getInstance();
+		this.apiConnector = apiConnector;
+		this.contactModelRepository = contactModelRepository;
 
 		// Initialize wakelock service
 		this.wakeLock = new WakeLockServiceImpl(appContext, lifetime);

@@ -24,6 +24,8 @@ package ch.threema.app.messagereceiver;
 import android.content.Intent;
 import android.graphics.Bitmap;
 
+import org.slf4j.Logger;
+
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -35,20 +37,26 @@ import java.util.UUID;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import ch.threema.app.ThreemaApplication;
+import ch.threema.app.emojis.EmojiUtil;
 import ch.threema.app.managers.ServiceManager;
+import ch.threema.app.multidevice.MultiDeviceManager;
 import ch.threema.app.services.GroupService;
 import ch.threema.app.services.MessageService;
+import ch.threema.app.tasks.OutboundIncomingGroupMessageUpdateReadTask;
 import ch.threema.app.tasks.OutgoingFileMessageTask;
 import ch.threema.app.tasks.OutgoingGroupDeleteMessageTask;
 import ch.threema.app.tasks.OutgoingGroupEditMessageTask;
+import ch.threema.app.tasks.OutgoingGroupReactionMessageTask;
 import ch.threema.app.tasks.OutgoingLocationMessageTask;
 import ch.threema.app.tasks.OutgoingPollSetupMessageTask;
 import ch.threema.app.tasks.OutgoingPollVoteGroupMessageTask;
 import ch.threema.app.tasks.OutgoingTextMessageTask;
+import ch.threema.app.utils.ConfigUtils;
 import ch.threema.app.utils.GroupUtil;
 import ch.threema.app.utils.NameUtil;
 import ch.threema.base.ThreemaException;
 import ch.threema.base.crypto.SymmetricEncryptionResult;
+import ch.threema.base.utils.LoggingUtil;
 import ch.threema.base.utils.Utils;
 import ch.threema.domain.models.MessageId;
 import ch.threema.domain.protocol.ThreemaFeature;
@@ -56,6 +64,8 @@ import ch.threema.domain.protocol.csp.messages.ballot.BallotData;
 import ch.threema.domain.protocol.csp.messages.ballot.BallotId;
 import ch.threema.domain.protocol.csp.messages.ballot.BallotVote;
 import ch.threema.domain.taskmanager.TaskManager;
+import ch.threema.domain.taskmanager.TriggerSource;
+import ch.threema.protobuf.csp.e2e.Reaction;
 import ch.threema.storage.DatabaseServiceNew;
 import ch.threema.storage.models.AbstractMessageModel;
 import ch.threema.storage.models.GroupMessageModel;
@@ -67,14 +77,19 @@ import ch.threema.storage.models.ballot.BallotModel;
 import ch.threema.storage.models.data.MessageContentsType;
 import ch.threema.storage.models.data.media.FileDataModel;
 
+import static ch.threema.app.utils.MessageUtil.canSendUserAcknowledge;
+import static ch.threema.domain.protocol.csp.ProtocolDefines.DELIVERYRECEIPT_MSGUSERACK;
+import static ch.threema.domain.protocol.csp.ProtocolDefines.DELIVERYRECEIPT_MSGUSERDEC;
+
 public class GroupMessageReceiver implements MessageReceiver<GroupMessageModel> {
+	private static final Logger logger = LoggingUtil.getThreemaLogger("GroupMessageReceiver");
 
 	private final GroupModel group;
 	private final GroupService groupService;
-	private Bitmap avatar = null;
 	private final DatabaseServiceNew databaseServiceNew;
 	private final @NonNull ServiceManager serviceManager;
 	private final TaskManager taskManager;
+	private final MultiDeviceManager multiDeviceManager;
 
 	public GroupMessageReceiver(
 		GroupModel group,
@@ -87,6 +102,7 @@ public class GroupMessageReceiver implements MessageReceiver<GroupMessageModel> 
 		this.databaseServiceNew = databaseServiceNew;
 		this.serviceManager = serviceManager;
 		this.taskManager = serviceManager.getTaskManager();
+		this.multiDeviceManager = serviceManager.getMultiDeviceManager();
 	}
 
 	@Override
@@ -126,7 +142,7 @@ public class GroupMessageReceiver implements MessageReceiver<GroupMessageModel> 
 
 	@Override
 	public void createAndSendTextMessage(@NonNull GroupMessageModel messageModel) {
-		Set<String> otherMembers = groupService.getOtherMembers(group);
+		Set<String> otherMembers = groupService.getMembersWithoutUser(group);
 
 		if (otherMembers.isEmpty()) {
 			// In case the recipients set is empty, we are sending the message in a notes group. In
@@ -161,7 +177,7 @@ public class GroupMessageReceiver implements MessageReceiver<GroupMessageModel> 
 
 	@Override
 	public void createAndSendLocationMessage(@NonNull GroupMessageModel messageModel) {
-		Set<String> otherMembers = groupService.getOtherMembers(group);
+		Set<String> otherMembers = groupService.getMembersWithoutUser(group);
 
 		if (otherMembers.isEmpty()) {
 			// In case the recipients set is empty, we are sending the message in a notes group. In
@@ -216,7 +232,7 @@ public class GroupMessageReceiver implements MessageReceiver<GroupMessageModel> 
 
 		// Set file data model again explicitly to enforce that the body of the message is rewritten
 		// and therefore updated.
-		messageModel.setFileData(modelFileData);
+		messageModel.setFileDataModel(modelFileData);
 
 		// Create a new message id if the given message id is null
 		messageModel.setApiMessageId(messageId != null ? messageId.toString() : new MessageId().toString());
@@ -236,12 +252,13 @@ public class GroupMessageReceiver implements MessageReceiver<GroupMessageModel> 
 
 	@Override
 	public void createAndSendBallotSetupMessage(
-		final BallotData ballotData,
-		final BallotModel ballotModel,
-		@NonNull GroupMessageModel messageModel,
-		@Nullable MessageId messageId,
-		@Nullable Collection<String> recipientIdentities
-	) throws ThreemaException {
+        @NonNull final BallotData ballotData,
+        @NonNull final BallotModel ballotModel,
+        @NonNull GroupMessageModel messageModel,
+        @Nullable MessageId messageId,
+        @Nullable Collection<String> recipientIdentities,
+        @NonNull TriggerSource triggerSource
+        ) throws ThreemaException {
 		final BallotId ballotId = new BallotId(Utils.hexStringToByteArray(ballotModel.getApiBallotId()));
 
 		// Create a new message id if the given message id is null
@@ -250,19 +267,25 @@ public class GroupMessageReceiver implements MessageReceiver<GroupMessageModel> 
 
 		bumpLastUpdate();
 
-		// Schedule outgoing text message task
-		taskManager.schedule(new OutgoingPollSetupMessageTask(
-			messageModel.getId(),
-			Type_GROUP,
-			getRecipientIdentities(recipientIdentities),
-			ballotId,
-			ballotData,
-			serviceManager
-		));
+		// Schedule outgoing text message task if this is triggered from local
+        if (triggerSource == TriggerSource.LOCAL) {
+            taskManager.schedule(new OutgoingPollSetupMessageTask(
+                messageModel.getId(),
+                Type_GROUP,
+                getRecipientIdentities(recipientIdentities),
+                ballotId,
+                ballotData,
+                serviceManager
+            ));
+        }
 	}
 
 	@Override
-	public void createAndSendBallotVoteMessage(final BallotVote[] votes, final BallotModel ballotModel) throws ThreemaException {
+	public void createAndSendBallotVoteMessage(
+        final BallotVote[] votes,
+        final BallotModel ballotModel,
+        @NonNull TriggerSource triggerSource
+     ) throws ThreemaException {
 		// Create message id
 		MessageId messageId = new MessageId();
 
@@ -280,6 +303,24 @@ public class GroupMessageReceiver implements MessageReceiver<GroupMessageModel> 
 			group.getCreatorIdentity(),
 			serviceManager
 		));
+	}
+
+	/**
+	 * Send an incoming message update to mark the message as read. This method only schedules the
+	 * outgoing group message update if multi device is activated.
+	 */
+	public void sendIncomingMessageUpdateRead(@NonNull Set<MessageId> messageIds, long timestamp) {
+		if (multiDeviceManager.isMultiDeviceActive()) {
+			taskManager.schedule(
+				new OutboundIncomingGroupMessageUpdateReadTask(
+					messageIds,
+					timestamp,
+					group.getApiGroupId(),
+					group.getCreatorIdentity(),
+					serviceManager
+				)
+			);
+		}
 	}
 
 	public void sendEditMessage(int messageModelId, @NonNull String body, @NonNull Date editedAt) {
@@ -309,6 +350,57 @@ public class GroupMessageReceiver implements MessageReceiver<GroupMessageModel> 
 				serviceManager
 			)
 		);
+	}
+
+	/**
+	 * Send a reaction message to the group. Members who do not support reactions will receive an ack/dec instead
+	 * @param messageModel MessageModel the reaction reacts to
+	 * @param actionCase The action case of the reaction (WITHDRAW is not backwards compatible and wil not cause an ack/dec to be sent)
+	 * @param emojiSequence The emoji sequence of the reaction
+	 * @param reactedAt The timestamp of the reaction
+	 */
+	public void sendReactionMessage(AbstractMessageModel messageModel, Reaction.ActionCase actionCase, @NonNull String emojiSequence, @NonNull Date reactedAt) {
+		// identities that support receiving emoji reactions
+		Set<String> emojiReactionsIdentities = GroupUtil.getRecipientIdentitiesByFeatureSupport(groupService.getFeatureSupport(group, ThreemaFeature.EMOJI_REACTIONS));
+		// all group identities except sender
+		Set<String> groupIdentities = groupService.getMembersWithoutUser(group);
+
+		if (!emojiReactionsIdentities.isEmpty()) {
+			taskManager.schedule(
+				new OutgoingGroupReactionMessageTask(
+					messageModel.getId(),
+					new MessageId(),
+					actionCase,
+					emojiSequence,
+					reactedAt,
+					emojiReactionsIdentities,
+					serviceManager
+				)
+			);
+			groupIdentities.removeAll(emojiReactionsIdentities);
+		}
+
+		// Fall back to acks for users who do not yet support receiving emoji reactions
+		if (actionCase == Reaction.ActionCase.APPLY && !groupIdentities.isEmpty() && canSendUserAcknowledge(messageModel)) {
+			MessageService messageService;
+			try {
+				messageService = ThreemaApplication.getServiceManager().getMessageService();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+
+			if (EmojiUtil.isThumbsUpEmoji(emojiSequence)) {
+				// send ack to these receivers
+				if (!messageService.sendGroupDeliveryReceipt(groupIdentities, (GroupMessageModel) messageModel, DELIVERYRECEIPT_MSGUSERACK)) {
+					logger.error("Unable to send ack message.");
+				}
+			} else if (EmojiUtil.isThumbsDownEmoji(emojiSequence)) {
+				// send dec to these receivers
+				if (!messageService.sendGroupDeliveryReceipt(groupIdentities, (GroupMessageModel) messageModel, DELIVERYRECEIPT_MSGUSERDEC)) {
+					logger.error("Unable to send dec message.");
+				}
+			}
+		}
 	}
 
 	@Override
@@ -362,18 +454,12 @@ public class GroupMessageReceiver implements MessageReceiver<GroupMessageModel> 
 
 	@Override
 	public Bitmap getNotificationAvatar() {
-		if (avatar == null && groupService != null) {
-			avatar = groupService.getAvatar(group, false);
-		}
-		return avatar;
+		return groupService.getAvatar(group, false);
 	}
 
 	@Override
 	public Bitmap getAvatar() {
-		if (avatar == null && groupService != null) {
-			avatar = groupService.getAvatar(group, true, true);
-		}
-		return avatar;
+		return groupService.getAvatar(group, true, true);
 	}
 
 	@Override
@@ -401,6 +487,12 @@ public class GroupMessageReceiver implements MessageReceiver<GroupMessageModel> 
 
 	@Override
 	public boolean sendMediaData() {
+        if (multiDeviceManager.isMultiDeviceActive()) {
+            // We need to upload the media in any case (also for notes groups) if multi device is
+            // active. In this case the upload is needed as the message is reflected.
+            return true;
+        }
+
 		// don't really send off group media if user is the only group member left - keep it local
 		String[] groupIdentities = groupService.getGroupIdentities(group);
 		return groupIdentities.length != 1 || !groupService.isGroupMember(group);
@@ -445,6 +537,33 @@ public class GroupMessageReceiver implements MessageReceiver<GroupMessageModel> 
 	public void bumpLastUpdate() {
 		if (group != null) {
 			groupService.bumpLastUpdate(group);
+		}
+	}
+
+	@Override
+    @EmojiReactionsSupport
+	public int getEmojiReactionSupport() {
+		if (!ConfigUtils.canSendEmojiReactions()) {
+			return Reactions_NONE;
+		}
+
+		GroupModel currentGroup = getGroup();
+		if (!groupService.isGroupMember(currentGroup)) {
+			return Reactions_NONE;
+		}
+		if (groupService.isNotesGroup(currentGroup)) {
+			return Reactions_FULL;
+		}
+
+		switch (groupService.getFeatureSupport(currentGroup, ThreemaFeature.EMOJI_REACTIONS).getAdoptionRate()) {
+			case PARTIAL:
+				return Reactions_PARTIAL;
+			case ALL:
+				return Reactions_FULL;
+            case NONE:
+                // Fallthrough
+			default:
+				return Reactions_NONE; // Handle unknown adoption rates
 		}
 	}
 

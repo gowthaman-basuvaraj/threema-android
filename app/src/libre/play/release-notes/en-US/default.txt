@@ -1,1 +1,2 @@
-- Fixed a bug in relation to the automatic updates of the threema shop version
+- Overhauled appearance of the agree/disagree icons (in preparation for the upcoming emoji reactions feature)
+- Fixed a bug concerning the message status of chats containing missed calls

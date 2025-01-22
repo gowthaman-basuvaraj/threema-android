@@ -1,1 +1,2 @@
-- Behebung eines Fehlers des Updaters der Shop Version
+- Überarbeitete Darstellung der Zustimmen-/Ablehnen-Icons (in Vorbereitung auf kommende Emoji-Reaktionen)
+- Behebung eines Fehlers bzgl. dem Nachrichten-Status von Chats mit verpassten Anrufen

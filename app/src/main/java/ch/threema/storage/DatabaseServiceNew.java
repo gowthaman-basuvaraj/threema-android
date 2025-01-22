@@ -25,8 +25,6 @@ import android.content.Context;
 import android.database.sqlite.SQLiteException;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-
 import net.zetetic.database.sqlcipher.SQLiteConnection;
 import net.zetetic.database.sqlcipher.SQLiteDatabase;
 import net.zetetic.database.sqlcipher.SQLiteDatabaseHook;
@@ -34,10 +32,17 @@ import net.zetetic.database.sqlcipher.SQLiteOpenHelper;
 
 import org.slf4j.Logger;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import ch.threema.app.services.UpdateSystemService;
 import ch.threema.app.services.systemupdate.SystemUpdateToVersion10;
-import ch.threema.app.services.systemupdate.SystemUpdateToVersion99;
+import ch.threema.app.services.systemupdate.SystemUpdateToVersion100;
+import ch.threema.app.services.systemupdate.SystemUpdateToVersion101;
+import ch.threema.app.services.systemupdate.SystemUpdateToVersion102;
+import ch.threema.app.services.systemupdate.SystemUpdateToVersion103;
+import ch.threema.app.services.systemupdate.SystemUpdateToVersion104;
+import ch.threema.app.services.systemupdate.SystemUpdateToVersion105;
+import ch.threema.app.services.systemupdate.SystemUpdateToVersion106;
 import ch.threema.app.services.systemupdate.SystemUpdateToVersion11;
 import ch.threema.app.services.systemupdate.SystemUpdateToVersion12;
 import ch.threema.app.services.systemupdate.SystemUpdateToVersion13;
@@ -124,10 +129,7 @@ import ch.threema.app.services.systemupdate.SystemUpdateToVersion95;
 import ch.threema.app.services.systemupdate.SystemUpdateToVersion96;
 import ch.threema.app.services.systemupdate.SystemUpdateToVersion97;
 import ch.threema.app.services.systemupdate.SystemUpdateToVersion98;
-import ch.threema.app.services.systemupdate.SystemUpdateToVersion100;
-import ch.threema.app.services.systemupdate.SystemUpdateToVersion101;
-import ch.threema.app.services.systemupdate.SystemUpdateToVersion102;
-import ch.threema.app.services.systemupdate.SystemUpdateToVersion103;
+import ch.threema.app.services.systemupdate.SystemUpdateToVersion99;
 import ch.threema.app.utils.RuntimeUtil;
 import ch.threema.app.utils.TestUtil;
 import ch.threema.base.utils.LoggingUtil;
@@ -135,6 +137,7 @@ import ch.threema.storage.factories.BallotChoiceModelFactory;
 import ch.threema.storage.factories.BallotModelFactory;
 import ch.threema.storage.factories.BallotVoteModelFactory;
 import ch.threema.storage.factories.ContactEditHistoryEntryModelFactory;
+import ch.threema.storage.factories.ContactEmojiReactionModelFactory;
 import ch.threema.storage.factories.ContactModelFactory;
 import ch.threema.storage.factories.ConversationTagFactory;
 import ch.threema.storage.factories.DistributionListMemberModelFactory;
@@ -144,17 +147,18 @@ import ch.threema.storage.factories.EditHistoryEntryModelFactory;
 import ch.threema.storage.factories.GroupBallotModelFactory;
 import ch.threema.storage.factories.GroupCallModelFactory;
 import ch.threema.storage.factories.GroupEditHistoryEntryModelFactory;
+import ch.threema.storage.factories.GroupEmojiReactionModelFactory;
 import ch.threema.storage.factories.GroupInviteModelFactory;
 import ch.threema.storage.factories.GroupMemberModelFactory;
 import ch.threema.storage.factories.GroupMessageModelFactory;
 import ch.threema.storage.factories.GroupModelFactory;
-import ch.threema.storage.factories.IncomingGroupSyncRequestLogModelFactory;
-import ch.threema.storage.factories.OutgoingGroupSyncRequestLogModelFactory;
 import ch.threema.storage.factories.IdentityBallotModelFactory;
 import ch.threema.storage.factories.IncomingGroupJoinRequestModelFactory;
+import ch.threema.storage.factories.IncomingGroupSyncRequestLogModelFactory;
 import ch.threema.storage.factories.MessageModelFactory;
 import ch.threema.storage.factories.ModelFactory;
 import ch.threema.storage.factories.OutgoingGroupJoinRequestModelFactory;
+import ch.threema.storage.factories.OutgoingGroupSyncRequestLogModelFactory;
 import ch.threema.storage.factories.RejectedGroupMessageFactory;
 import ch.threema.storage.factories.ServerMessageModelFactory;
 import ch.threema.storage.factories.TaskArchiveFactory;
@@ -165,7 +169,7 @@ public class DatabaseServiceNew extends SQLiteOpenHelper {
 
     public static final String DEFAULT_DATABASE_NAME_V4 = "threema4.db";
     public static final String DATABASE_BACKUP_EXT = ".backup";
-    private static final int DATABASE_VERSION = SystemUpdateToVersion103.VERSION;
+    private static final int DATABASE_VERSION = SystemUpdateToVersion106.VERSION;
 
     private final Context context;
     private final UpdateSystemService updateSystemService;
@@ -196,6 +200,8 @@ public class DatabaseServiceNew extends SQLiteOpenHelper {
     private RejectedGroupMessageFactory rejectedGroupMessageFactory;
     private EditHistoryEntryModelFactory contactEditHistoryEntryModelFactory;
     private EditHistoryEntryModelFactory groupEditHistoryEntryModelFactory;
+    private ContactEmojiReactionModelFactory contactEmojiReactionModelFactory;
+    private GroupEmojiReactionModelFactory groupEmojiReactionModelFactory;
 
     public DatabaseServiceNew(
         final Context context,
@@ -291,7 +297,9 @@ public class DatabaseServiceNew extends SQLiteOpenHelper {
             this.getTaskArchiveFactory(),
             this.getRejectedGroupMessageFactory(),
             this.getContactEditHistoryEntryModelFactory(),
-            this.getGroupEditHistoryEntryModelFactory()
+            this.getGroupEditHistoryEntryModelFactory(),
+            this.getContactEmojiReactionModelFactory(),
+            this.getGroupEmojiReactionModelFactory()
         }) {
             String[] createTableStatement = f.getStatements();
             if (createTableStatement != null) {
@@ -511,6 +519,22 @@ public class DatabaseServiceNew extends SQLiteOpenHelper {
         }
         return this.groupEditHistoryEntryModelFactory;
     }
+
+	@NonNull
+	private ContactEmojiReactionModelFactory getContactEmojiReactionModelFactory() {
+		if (this.contactEmojiReactionModelFactory == null) {
+			this.contactEmojiReactionModelFactory = new ContactEmojiReactionModelFactory(this);
+		}
+		return this.contactEmojiReactionModelFactory;
+	}
+
+	@NonNull
+	private GroupEmojiReactionModelFactory getGroupEmojiReactionModelFactory() {
+		if (this.groupEmojiReactionModelFactory == null) {
+			this.groupEmojiReactionModelFactory = new GroupEmojiReactionModelFactory(this);
+		}
+		return this.groupEmojiReactionModelFactory;
+	}
 
     // Note: Enable this to allow database downgrades.
     //
@@ -817,6 +841,15 @@ public class DatabaseServiceNew extends SQLiteOpenHelper {
         }
         if (oldVersion < SystemUpdateToVersion103.VERSION) {
             this.updateSystemService.addUpdate(new SystemUpdateToVersion103(sqLiteDatabase));
+        }
+        if (oldVersion < SystemUpdateToVersion104.VERSION) {
+            this.updateSystemService.addUpdate(new SystemUpdateToVersion104(sqLiteDatabase, context));
+        }
+        if (oldVersion < SystemUpdateToVersion105.VERSION) {
+            this.updateSystemService.addUpdate(new SystemUpdateToVersion105());
+        }
+        if (oldVersion < SystemUpdateToVersion106.VERSION) {
+            this.updateSystemService.addUpdate(new SystemUpdateToVersion106(sqLiteDatabase));
         }
     }
 

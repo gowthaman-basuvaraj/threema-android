@@ -36,17 +36,20 @@ import androidx.annotation.Nullable;
 import ch.threema.app.R;
 import ch.threema.app.ThreemaApplication;
 import ch.threema.app.managers.ServiceManager;
+import ch.threema.app.multidevice.MultiDeviceManager;
+import ch.threema.app.services.BlockedIdentitiesService;
 import ch.threema.app.services.ContactService;
-import ch.threema.app.services.IdListService;
 import ch.threema.app.services.MessageService;
 import ch.threema.app.stores.IdentityStore;
+import ch.threema.app.tasks.OutboundIncomingContactMessageUpdateReadTask;
+import ch.threema.app.tasks.OutgoingContactDeliveryReceiptMessageTask;
 import ch.threema.app.tasks.OutgoingContactDeleteMessageTask;
 import ch.threema.app.tasks.OutgoingContactEditMessageTask;
-import ch.threema.app.tasks.OutgoingPollSetupMessageTask;
-import ch.threema.app.tasks.OutgoingPollVoteContactMessageTask;
-import ch.threema.app.tasks.OutgoingContactDeliveryReceiptMessageTask;
 import ch.threema.app.tasks.OutgoingFileMessageTask;
 import ch.threema.app.tasks.OutgoingLocationMessageTask;
+import ch.threema.app.tasks.OutgoingContactReactionMessageTask;
+import ch.threema.app.tasks.OutgoingPollSetupMessageTask;
+import ch.threema.app.tasks.OutgoingPollVoteContactMessageTask;
 import ch.threema.app.tasks.OutgoingTextMessageTask;
 import ch.threema.app.tasks.OutgoingTypingIndicatorMessageTask;
 import ch.threema.app.tasks.OutgoingVoipCallAnswerMessageTask;
@@ -54,12 +57,15 @@ import ch.threema.app.tasks.OutgoingVoipCallHangupMessageTask;
 import ch.threema.app.tasks.OutgoingVoipCallOfferMessageTask;
 import ch.threema.app.tasks.OutgoingVoipCallRingingMessageTask;
 import ch.threema.app.tasks.OutgoingVoipICECandidateMessageTask;
+import ch.threema.app.utils.ConfigUtils;
+import ch.threema.app.utils.ContactUtil;
 import ch.threema.app.utils.NameUtil;
 import ch.threema.app.utils.TestUtil;
 import ch.threema.base.ThreemaException;
 import ch.threema.base.crypto.SymmetricEncryptionResult;
 import ch.threema.base.utils.Utils;
 import ch.threema.domain.models.MessageId;
+import ch.threema.domain.protocol.ThreemaFeature;
 import ch.threema.domain.protocol.csp.messages.ballot.BallotData;
 import ch.threema.domain.protocol.csp.messages.ballot.BallotId;
 import ch.threema.domain.protocol.csp.messages.ballot.BallotVote;
@@ -71,6 +77,8 @@ import ch.threema.domain.protocol.csp.messages.voip.VoipICECandidatesData;
 import ch.threema.domain.taskmanager.ActiveTaskCodec;
 import ch.threema.domain.taskmanager.Task;
 import ch.threema.domain.taskmanager.TaskManager;
+import ch.threema.domain.taskmanager.TriggerSource;
+import ch.threema.protobuf.csp.e2e.Reaction;
 import ch.threema.storage.DatabaseServiceNew;
 import ch.threema.storage.models.AbstractMessageModel;
 import ch.threema.storage.models.ContactModel;
@@ -83,27 +91,29 @@ import ch.threema.storage.models.data.media.FileDataModel;
 public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 	private final ContactModel contactModel;
 	private final ContactService contactService;
-	private Bitmap avatar = null;
 	@NonNull
 	private final ServiceManager serviceManager;
 	private final DatabaseServiceNew databaseServiceNew;
 	private final IdentityStore identityStore;
-	private final IdListService blockedContactsService;
+	private final BlockedIdentitiesService blockedIdentitiesService;
 	private final @NonNull TaskManager taskManager;
+	private final @NonNull MultiDeviceManager multiDeviceManager;
 
 	public ContactMessageReceiver(ContactModel contactModel,
 	                              ContactService contactService,
 	                              @NonNull ServiceManager serviceManager,
 	                              DatabaseServiceNew databaseServiceNew,
 	                              IdentityStore identityStore,
-	                              IdListService blockedContactsService) {
+	                              @NonNull BlockedIdentitiesService blockedIdentitiesService
+	) {
 		this.contactModel = contactModel;
 		this.contactService = contactService;
 		this.serviceManager = serviceManager;
 		this.databaseServiceNew = databaseServiceNew;
 		this.identityStore = identityStore;
-		this.blockedContactsService = blockedContactsService;
+		this.blockedIdentitiesService = blockedIdentitiesService;
 		this.taskManager = serviceManager.getTaskManager();
+		this.multiDeviceManager = serviceManager.getMultiDeviceManager();
 	}
 
 	protected ContactMessageReceiver(ContactMessageReceiver contactMessageReceiver) {
@@ -113,9 +123,8 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 			contactMessageReceiver.serviceManager,
 			contactMessageReceiver.databaseServiceNew,
 			contactMessageReceiver.identityStore,
-			contactMessageReceiver.blockedContactsService
+			contactMessageReceiver.blockedIdentitiesService
 		);
-		avatar = contactMessageReceiver.avatar;
 	}
 
 	@Override
@@ -163,7 +172,7 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 		saveLocalModel(messageModel);
 
 		// Mark the contact as non-hidden and unarchived
-		contactService.setIsHidden(contactModel.getIdentity(), false);
+		contactService.setAcquaintanceLevel(contactModel.getIdentity(), ContactModel.AcquaintanceLevel.DIRECT);
 		contactService.setIsArchived(contactModel.getIdentity(), false);
 
 		bumpLastUpdate();
@@ -178,7 +187,7 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 	}
 
 	public void resendTextMessage(@NonNull MessageModel messageModel) {
-		contactService.setIsHidden(contactModel.getIdentity(), false);
+		contactService.setAcquaintanceLevel(contactModel.getIdentity(), ContactModel.AcquaintanceLevel.DIRECT);
 		contactService.setIsArchived(contactModel.getIdentity(), false);
 
 		scheduleTask(new OutgoingTextMessageTask(
@@ -196,7 +205,7 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 		saveLocalModel(messageModel);
 
 		// Mark the contact as non-hidden and unarchived
-		contactService.setIsHidden(contactModel.getIdentity(), false);
+		contactService.setAcquaintanceLevel(contactModel.getIdentity(), ContactModel.AcquaintanceLevel.DIRECT);
 		contactService.setIsArchived(contactModel.getIdentity(), false);
 
 		bumpLastUpdate();
@@ -212,7 +221,7 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 
 	public void resendLocationMessage(@NonNull MessageModel messageModel) {
 		// Mark the contact as non-hidden and unarchived
-		contactService.setIsHidden(contactModel.getIdentity(), false);
+		contactService.setAcquaintanceLevel(contactModel.getIdentity(), ContactModel.AcquaintanceLevel.DIRECT);
 		contactService.setIsArchived(contactModel.getIdentity(), false);
 
 		// Schedule outgoing text message task
@@ -242,14 +251,14 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 
 		// Set file data model again explicitly to enforce that the body of the message is rewritten
 		// and therefore updated.
-		messageModel.setFileData(modelFileData);
+		messageModel.setFileDataModel(modelFileData);
 
 		// Create a new message id if the given message id is null
 		messageModel.setApiMessageId(messageId != null ? messageId.toString() : new MessageId().toString());
 		saveLocalModel(messageModel);
 
 		// Mark the contact as non-hidden and unarchived
-		contactService.setIsHidden(contactModel.getIdentity(), false);
+		contactService.setAcquaintanceLevel(contactModel.getIdentity(), ContactModel.AcquaintanceLevel.DIRECT);
 		contactService.setIsArchived(contactModel.getIdentity(), false);
 
 		// Note that lastUpdate lastUpdate was bumped when the file message was created
@@ -266,40 +275,44 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 
 	@Override
 	public void createAndSendBallotSetupMessage(
-		BallotData ballotData,
-		BallotModel ballotModel,
-		MessageModel messageModel,
-		@Nullable MessageId messageId,
-		@Nullable Collection<String> recipientIdentities
-	) throws ThreemaException {
-		// Create a new message id if the given message id is null
-		messageModel.setApiMessageId(messageId != null ? messageId.toString() : new MessageId().toString());
+        @NonNull BallotData ballotData,
+        @NonNull BallotModel ballotModel,
+        @NonNull MessageModel messageModel,
+        @NonNull MessageId messageId,
+        @Nullable Collection<String> recipientIdentities,
+        @NonNull TriggerSource triggerSource
+    ) throws ThreemaException {
+		// Save the given message id to the model
+		messageModel.setApiMessageId(messageId.toString());
 		saveLocalModel(messageModel);
 
 		final BallotId ballotId = new BallotId(Utils.hexStringToByteArray(ballotModel.getApiBallotId()));
 
 		// Mark the contact as non-hidden and unarchived
-		contactService.setIsHidden(contactModel.getIdentity(), false);
+		contactService.setAcquaintanceLevel(contactModel.getIdentity(), ContactModel.AcquaintanceLevel.DIRECT);
 		contactService.setIsArchived(contactModel.getIdentity(), false);
 
 		bumpLastUpdate();
 
-		// Schedule outgoing text message task
-		scheduleTask(new OutgoingPollSetupMessageTask(
-			messageModel.getId(),
-			Type_CONTACT,
-			Set.of(messageModel.getIdentity()),
-			ballotId,
-			ballotData,
-			serviceManager
-		));
+		// Schedule outgoing text message task if this has been triggered by local
+        if (triggerSource == TriggerSource.LOCAL) {
+            scheduleTask(new OutgoingPollSetupMessageTask(
+                messageModel.getId(),
+                Type_CONTACT,
+                Set.of(messageModel.getIdentity()),
+                ballotId,
+                ballotData,
+                serviceManager
+            ));
+        }
 	}
 
 	@Override
-	public void createAndSendBallotVoteMessage(BallotVote[] votes, BallotModel ballotModel) throws ThreemaException {
-		// Create message id
-		MessageId messageId = new MessageId();
-
+	public void createAndSendBallotVoteMessage(
+        BallotVote[] votes,
+        BallotModel ballotModel,
+        @NonNull TriggerSource triggerSource
+    ) throws ThreemaException {
 		final BallotId ballotId = new BallotId(Utils.hexStringToByteArray(ballotModel.getApiBallotId()));
 
 		if (ballotModel.getType() == BallotModel.Type.RESULT_ON_CLOSE) {
@@ -310,18 +323,24 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 		}
 
 		// Mark the contact as non-hidden and unarchived
-		contactService.setIsHidden(contactModel.getIdentity(), false);
+		contactService.setAcquaintanceLevel(contactModel.getIdentity(), ContactModel.AcquaintanceLevel.DIRECT);
 		contactService.setIsArchived(contactModel.getIdentity(), false);
 
-		// Schedule outgoing text message task
-		scheduleTask(new OutgoingPollVoteContactMessageTask(
-			messageId,
-			ballotId,
-			ballotModel.getCreatorIdentity(),
-			votes,
-			contactModel.getIdentity(),
-			serviceManager
-		));
+
+        if (triggerSource == TriggerSource.LOCAL) {
+            // Create message id
+            MessageId messageId = new MessageId();
+
+            // Schedule outgoing text message task
+            scheduleTask(new OutgoingPollVoteContactMessageTask(
+                messageId,
+                ballotId,
+                ballotModel.getCreatorIdentity(),
+                votes,
+                contactModel.getIdentity(),
+                serviceManager
+            ));
+        }
 	}
 
 	/**
@@ -340,12 +359,31 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 	 * @param receiptType the type of the delivery receipt
 	 * @param messageIds  the message ids
 	 */
-	public void sendDeliveryReceipt(int receiptType, @NonNull MessageId[] messageIds) {
+	public void sendDeliveryReceipt(int receiptType, @NonNull MessageId[] messageIds, long time) {
 		scheduleTask(
 			new OutgoingContactDeliveryReceiptMessageTask(
-				receiptType, messageIds, new Date().getTime(), contactModel.getIdentity(), serviceManager
+				receiptType, messageIds, time, contactModel.getIdentity(), serviceManager
 			)
 		);
+	}
+
+	/**
+	 * Send an incoming message update to mark the message as read. Note that this is the
+	 * alternative of {@link ContactMessageReceiver#sendDeliveryReceipt(int, MessageId[], long)}
+	 * when no delivery receipt should be sent. This method only schedules the outgoing message
+	 * update if multi device is activated.
+	 */
+	public void sendIncomingMessageUpdateRead(@NonNull Set<MessageId> messageIds, long timestamp) {
+		if (multiDeviceManager.isMultiDeviceActive()) {
+			scheduleTask(
+				new OutboundIncomingContactMessageUpdateReadTask(
+					messageIds,
+					timestamp,
+					contactModel.getIdentity(),
+					serviceManager
+				)
+			);
+		}
 	}
 
 	/**
@@ -438,6 +476,20 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 		);
 	}
 
+	public void sendReactionMessage(AbstractMessageModel messageModel, Reaction.ActionCase actionCase, @NonNull String emojiSequence, @NonNull Date reactedAt) {
+		scheduleTask(
+			new OutgoingContactReactionMessageTask(
+				contactModel.getIdentity(),
+				messageModel.getId(),
+				new MessageId(),
+				actionCase,
+				emojiSequence,
+				reactedAt,
+				serviceManager
+			)
+		);
+	}
+
 	@Override
 	public List<MessageModel> loadMessages(MessageService.MessageFilter filter) {
 		return databaseServiceNew.getMessageModelFactory().find(
@@ -506,30 +558,28 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 	@Override
 	@Nullable
 	public Bitmap getNotificationAvatar() {
-		if (avatar == null && contactService != null) {
-			avatar = contactService.getAvatar(contactModel, false);
-		}
-		return avatar;
+		return contactService.getAvatar(contactModel, false);
 	}
 
 	@Override
 	@Nullable
 	public Bitmap getAvatar() {
-		if (avatar == null && contactService != null) {
-			avatar = contactService.getAvatar(contactModel, true, true);
-		}
-		return avatar;
+		return contactService.getAvatar(contactModel, true, true);
 	}
 
 	@Deprecated
 	@Override
 	public int getUniqueId() {
-		return contactService.getUniqueId(contactModel);
+		return contactModel != null
+			? ContactUtil.getUniqueId(contactModel.getIdentity())
+			: 0;
 	}
 
 	@Override
 	public String getUniqueIdString() {
-		return contactService.getUniqueIdString(contactModel);
+		return contactModel != null
+			? ContactUtil.getUniqueIdString(contactModel.getIdentity())
+		    : "";
 	}
 
 	@Override
@@ -552,7 +602,7 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 	@Override
 	public SendingPermissionValidationResult validateSendingPermission() {
 		int cannotSendResId = 0;
-		if (blockedContactsService.has(contactModel.getIdentity())) {
+		if (blockedIdentitiesService.isBlocked(contactModel.getIdentity())) {
 			cannotSendResId = R.string.blocked_cannot_send;
 		} else {
 			if (contactModel.getState() != null) {
@@ -588,6 +638,22 @@ public class ContactMessageReceiver implements MessageReceiver<MessageModel> {
 	@Override
 	public void bumpLastUpdate() {
 		contactService.bumpLastUpdate(contactModel.getIdentity());
+	}
+
+	/**
+	 * Check whether we should send emoji reactions to this particular MessageReceiver
+	 * @return true if we should send emoji reactions to this MessageReceiver, false otherwise
+	 */
+	@Override
+    @EmojiReactionsSupport
+	public int getEmojiReactionSupport() {
+		if (!ConfigUtils.canSendEmojiReactions()) {
+			return Reactions_NONE;
+		}
+
+        return ThreemaFeature.canEmojiReactions((this).getContact().getFeatureMask())
+            ? Reactions_FULL
+            : Reactions_NONE;
 	}
 
 	@Override

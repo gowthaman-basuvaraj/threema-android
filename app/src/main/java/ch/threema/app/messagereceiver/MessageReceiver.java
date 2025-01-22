@@ -24,10 +24,6 @@ package ch.threema.app.messagereceiver;
 import android.content.Intent;
 import android.graphics.Bitmap;
 
-import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.sql.SQLException;
@@ -35,12 +31,16 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import ch.threema.app.services.MessageService;
 import ch.threema.base.ThreemaException;
 import ch.threema.base.crypto.SymmetricEncryptionResult;
 import ch.threema.domain.models.MessageId;
 import ch.threema.domain.protocol.csp.messages.ballot.BallotData;
 import ch.threema.domain.protocol.csp.messages.ballot.BallotVote;
+import ch.threema.domain.taskmanager.TriggerSource;
 import ch.threema.storage.models.AbstractMessageModel;
 import ch.threema.storage.models.MessageType;
 import ch.threema.storage.models.ballot.BallotModel;
@@ -56,9 +56,13 @@ public interface MessageReceiver<M extends AbstractMessageModel> {
 	@IntDef({ Type_CONTACT, Type_GROUP, Type_DISTRIBUTION_LIST })
 	@interface MessageReceiverType {}
 
-	interface OnSendingPermissionDenied {
-		void denied(int errorResId);
-	}
+    int Reactions_NONE = 0;
+    int Reactions_FULL = 1;
+    int Reactions_PARTIAL = 2;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({ Reactions_NONE, Reactions_FULL, Reactions_PARTIAL })
+    @interface EmojiReactionsSupport {}
 
 	/**
 	 * Return all affected contact message receivers.
@@ -111,20 +115,33 @@ public interface MessageReceiver<M extends AbstractMessageModel> {
 	) throws ThreemaException;
 
 	/**
-	 * send a ballot (create) message
+	 * Send a ballot (create) message. Note that the message is only sent if the trigger source is
+     * local. The message id is added to the message model in any case.
+     * TODO(ANDR-3518): The trigger source should not be passed until here. This is only a security
+     *  measure as the ballot service has many side effects. Ideally, this method would only be
+     *  called if a csp message should really be sent out.
 	 */
 	void createAndSendBallotSetupMessage(
-			final BallotData ballotData,
-			final BallotModel ballotModel,
-			M abstractMessageModel,
-			@Nullable MessageId messageId,
-			@Nullable Collection<String> recipientIdentities
+			@NonNull final BallotData ballotData,
+			@NonNull final BallotModel ballotModel,
+			@NonNull M abstractMessageModel,
+			@NonNull MessageId messageId,
+			@Nullable Collection<String> recipientIdentities,
+            @NonNull TriggerSource triggerSource
 	) throws ThreemaException;
 
 	/**
-	 * send a ballot vote message
+	 * Send a ballot vote message. Note that the message is only sent if the trigger source is
+     * local.
+     * TODO(ANDR-3518): The trigger source should not be passed until here. This is only a security
+     *  measure as the ballot service has many side effects. Ideally, this method would only be
+     *  called if a csp message should really be sent out.
 	 */
-	void createAndSendBallotVoteMessage(BallotVote[] votes, BallotModel ballotModel) throws ThreemaException;
+	void createAndSendBallotVoteMessage(
+        BallotVote[] votes,
+        BallotModel ballotModel,
+        @NonNull TriggerSource triggerSource
+    ) throws ThreemaException;
 
 	/**
 	 * select and filter (if filter is set) all message models
@@ -214,7 +231,7 @@ public interface MessageReceiver<M extends AbstractMessageModel> {
 
 	/**
 	 * all receiving identities
-	 * @return list of identities
+	 * @return array of identities
 	 */
 	String[] getIdentities();
 
@@ -225,4 +242,11 @@ public interface MessageReceiver<M extends AbstractMessageModel> {
 	 * Not that this method only has an effect if it is supported by the implementing receiver.
 	 */
 	void bumpLastUpdate();
+
+    /**
+     * Check how this particular MessageReceiver supports emoji reactions
+     * @return @EmojiReactionsSupport
+     */
+    @EmojiReactionsSupport
+	int getEmojiReactionSupport();
 }

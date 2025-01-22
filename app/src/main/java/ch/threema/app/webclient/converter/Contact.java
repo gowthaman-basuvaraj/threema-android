@@ -38,6 +38,7 @@ import ch.threema.app.utils.ConfigUtils;
 import ch.threema.app.utils.ContactUtil;
 import ch.threema.app.utils.NameUtil;
 import ch.threema.app.webclient.exceptions.ConversionException;
+import ch.threema.domain.models.IdentityState;
 import ch.threema.domain.models.IdentityType;
 import ch.threema.domain.protocol.ThreemaFeature;
 import ch.threema.storage.models.ContactModel;
@@ -96,25 +97,25 @@ public class Contact extends Converter {
 			builder.maybePut(IS_WORK, ConfigUtils.isWorkBuild() && contact.isWork());
 			builder.put(PUBLIC_KEY, contact.getPublicKey());
 			builder.put(IDENTITY_TYPE, contact.getIdentityType() == IdentityType.WORK ? 1 : 0);
-			builder.put(IS_BLOCKED, getBlockedContactsService().has(contact.getIdentity()));
+			builder.put(IS_BLOCKED, getBlockedContactsService().isBlocked(contact.getIdentity()));
 
 			final long featureMask = contact.getFeatureMask();
 			builder.put(FEATURE_MASK, featureMask);
 			// TODO(ANDR-2708): Remove
 			builder.put(FEATURE_LEVEL, ThreemaFeature.featureMaskToLevel(featureMask));
 
-			boolean isSecretChat = getHiddenChatListService().has(getContactService().getUniqueIdString(contact));
+			boolean isSecretChat = getHiddenChatListService().has(ContactUtil.getUniqueIdString(contact.getIdentity()));
 			builder.put(Receiver.LOCKED, isSecretChat);
 			builder.put(Receiver.VISIBLE, !isSecretChat || !getPreferenceService().isPrivateChatsHidden());
 
 			//define access
 			builder.put(Receiver.ACCESS, (new MsgpackObjectBuilder())
-					.put(Receiver.CAN_DELETE, getContactService().getAccess(contact).canDelete())
+					.put(Receiver.CAN_DELETE, getContactService().getAccess(contact.getIdentity()).canDelete())
 					.put(CAN_CHANGE_AVATAR, ContactUtil.canChangeAvatar(contact, getPreferenceService(), getFileService()))
 					.put(CAN_CHANGE_FIRST_NAME, ContactUtil.canChangeFirstName(contact))
 					.put(CAN_CHANGE_LAST_NAME, ContactUtil.canChangeLastName(contact)));
 		} catch (NullPointerException e) {
-			throw new ConversionException(e.toString());
+			throw new ConversionException(e);
 		}
 		return builder;
 	}
@@ -217,7 +218,7 @@ public class Contact extends Converter {
 		try {
 			return contact.getIdentity();
 		} catch (NullPointerException e) {
-			throw new ConversionException(e.toString());
+			throw new ConversionException(e);
 		}
 	}
 
@@ -226,7 +227,7 @@ public class Contact extends Converter {
 		try {
 			return NameUtil.getDisplayNameOrNickname(contact, true);
 		} catch (NullPointerException e) {
-			throw new ConversionException(e.toString());
+			throw new ConversionException(e);
 		}
 	}
 
@@ -235,7 +236,7 @@ public class Contact extends Converter {
 		try {
 			return String.format("#%06X", (0xFFFFFF & contact.getColorLight()));
 		} catch (NullPointerException e) {
-			throw new ConversionException(e.toString());
+			throw new ConversionException(e);
 		}
 	}
 
@@ -246,11 +247,11 @@ public class Contact extends Converter {
 	public static ContactService.Filter getContactFilter() {
 		return new ContactService.Filter() {
 			@Override
-			public ContactModel.State[] states() {
-				return new ContactModel.State[] {
-					ContactModel.State.ACTIVE,
-					ContactModel.State.INACTIVE,
-					ContactModel.State.INVALID,
+			public IdentityState[] states() {
+				return new IdentityState[] {
+					IdentityState.ACTIVE,
+					IdentityState.INACTIVE,
+					IdentityState.INVALID,
 				};
 			}
 

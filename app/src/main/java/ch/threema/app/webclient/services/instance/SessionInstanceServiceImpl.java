@@ -189,7 +189,8 @@ public class SessionInstanceServiceImpl implements SessionInstanceService {
 		);
 		final AvatarUpdateHandler avatarUpdateHandler = new AvatarUpdateHandler(
 			handler,
-			updateDispatcher
+			updateDispatcher,
+            services.contact
 		);
 		final ConversationUpdateHandler conversationUpdateHandler = new ConversationUpdateHandler(
 			handler,
@@ -428,17 +429,22 @@ public class SessionInstanceServiceImpl implements SessionInstanceService {
 			createDispatcher,
 			services.message,
 			services.lifetime,
-			services.blockedContactsService));
+			services.blockedIdentitiesService
+        ));
 		createDispatcher.addReceiver(new FileMessageCreateHandler(
 			createDispatcher,
 			services.message,
 			services.file,
 			services.lifetime,
-			services.blockedContactsService));
+			services.blockedIdentitiesService
+        ));
 
 		createDispatcher.addReceiver(new CreateContactHandler(
 			createDispatcher,
-			services.contact
+			services.contact,
+			services.user,
+			services.apiConnector,
+			services.contactModelRepository
 		));
 
 		createDispatcher.addReceiver(new CreateGroupHandler(
@@ -465,7 +471,6 @@ public class SessionInstanceServiceImpl implements SessionInstanceService {
 		));
 		updateDispatcher.addReceiver(new ModifyProfileHandler(
 			responseDispatcher,
-			services.contact,
 			services.user
 		));
 		updateDispatcher.addReceiver(new ModifyConversationHandler(

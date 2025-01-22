@@ -39,9 +39,11 @@ public class ProtocolDefines {
 	public static final int RECONNECT_MAX_INTERVAL = 10;
 
 	// Echo request timeouts (in seconds)
-	public static final short ECHO_REQUEST_INTERVAL = 60;
-	public static final short CONNECTION_IDLE_TIMEOUT = 120;
 	public static final short ECHO_RESPONSE_TIMEOUT = 10;
+	public static final short ECHO_REQUEST_INTERVAL_CSP = 60;
+	public static final short CONNECTION_IDLE_TIMEOUT_CSP = 120;
+	public static final short ECHO_REQUEST_INTERVAL_MD = 15;
+	public static final short CONNECTION_IDLE_TIMEOUT_MD = 30;
 
 	/* object lengths */
 	public static final int COOKIE_LEN = 16;
@@ -130,6 +132,8 @@ public class ProtocolDefines {
 	public static final int MSGTYPE_DELETE_MESSAGE = 0x92;
 	public static final int MSGTYPE_GROUP_EDIT_MESSAGE = 0x93;
 	public static final int MSGTYPE_GROUP_DELETE_MESSAGE = 0x94;
+	public static final int MSGTYPE_REACTION = 0x82;
+	public static final int MSGTYPE_GROUP_REACTION = 0x83;
 
 	/* message flags */
 	// Note: Do not forget to update AbstractMessage#getMessageTypeDefaultFlags when adding a flag

@@ -29,9 +29,8 @@ public interface IdListService {
 	void add(String id);
 	boolean has(String id);
 	void remove(String id);
-	void toggle(Context context, ContactModel contactModel);
 
 	String[] getAll();
-	void addAll(String[] ids);
 	void removeAll();
+    void replaceAll(String[] ids);
 }

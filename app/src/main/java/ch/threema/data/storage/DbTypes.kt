@@ -22,12 +22,14 @@
 package ch.threema.data.storage
 
 import ch.threema.domain.models.ContactSyncState
+import ch.threema.domain.models.IdentityState
 import ch.threema.domain.models.IdentityType
 import ch.threema.domain.models.ReadReceiptPolicy
 import ch.threema.domain.models.TypingIndicatorPolicy
 import ch.threema.domain.models.VerificationLevel
 import ch.threema.domain.models.WorkVerificationLevel
 import ch.threema.storage.models.ContactModel
+import ch.threema.storage.models.GroupModel.UserState
 import java.util.Date
 
 // This file contains the types used in the database abstraction layer.
@@ -56,7 +58,7 @@ data class DbContact(
     /** Acquaintance level (direct / group). */
     val acquaintanceLevel: ContactModel.AcquaintanceLevel,
     /** Activity state (active / inactive / invalid). */
-    val activityState: ContactModel.State,
+    val activityState: IdentityState,
     /** Contact sync state. */
     val syncState: ContactSyncState,
     /** Feature mask. */
@@ -107,6 +109,8 @@ data class DbGroup(
     val groupDescriptionChangedAt: Date?,
     /** The group members' identities. */
     val members: Set<String>,
+    /** The group user state. */
+    val userState: UserState,
 )
 
 data class DbEditHistoryEntry(
@@ -132,3 +136,22 @@ data class DbEditHistoryEntry(
         const val COLUMN_EDITED_AT = "editedAt"
     }
 }
+
+data class DbEmojiReaction(
+    /** The row id of the message this reaction refers to - see [ch.threema.storage.models.AbstractMessageModel.COLUMN_ID] */
+    val messageId: Int,
+    /** The identity of the person who reacted. This may differ from the sender of the message */
+    val senderIdentity: String,
+    /** The emoji codepoint sequence of the reaction. This can never be empty */
+    val emojiSequence: String,
+    /** Timestamp when the reaction was locally created. */
+    val reactedAt: Date
+) {
+    companion object {
+        const val COLUMN_MESSAGE_ID = "messageId"
+        const val COLUMN_SENDER_IDENTITY = "senderIdentity"
+        const val COLUMN_EMOJI_SEQUENCE = "emojiSequence"
+        const val COLUMN_REACTED_AT = "reactedAt"
+    }
+}
+

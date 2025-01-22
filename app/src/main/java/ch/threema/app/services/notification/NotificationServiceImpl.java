@@ -21,17 +21,6 @@
 
 package ch.threema.app.services.notification;
 
-import static android.provider.Settings.System.DEFAULT_NOTIFICATION_URI;
-import static android.provider.Settings.System.DEFAULT_RINGTONE_URI;
-import static androidx.core.app.NotificationCompat.MessagingStyle.MAXIMUM_RETAINED_MESSAGES;
-import static ch.threema.app.ThreemaApplication.WORK_SYNC_NOTIFICATION_ID;
-import static ch.threema.app.backuprestore.csv.RestoreService.RESTORE_COMPLETION_NOTIFICATION_ID;
-import static ch.threema.app.utils.IntentDataUtil.PENDING_INTENT_FLAG_IMMUTABLE;
-import static ch.threema.app.voip.services.VoipCallService.EXTRA_ACTIVITY_MODE;
-import static ch.threema.app.voip.services.VoipCallService.EXTRA_CALL_ID;
-import static ch.threema.app.voip.services.VoipCallService.EXTRA_CONTACT_IDENTITY;
-import static ch.threema.app.voip.services.VoipCallService.EXTRA_IS_INITIATOR;
-
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -50,17 +39,6 @@ import android.os.SystemClock;
 import android.service.notification.StatusBarNotification;
 import android.text.format.DateUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.core.app.Person;
-import androidx.core.app.RemoteInput;
-import androidx.core.app.TaskStackBuilder;
-import androidx.core.content.LocusIdCompat;
-import androidx.core.graphics.drawable.IconCompat;
-
 import org.jetbrains.annotations.Contract;
 import org.slf4j.Logger;
 
@@ -76,6 +54,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.app.Person;
+import androidx.core.app.RemoteInput;
+import androidx.core.app.TaskStackBuilder;
+import androidx.core.content.LocusIdCompat;
+import androidx.core.graphics.drawable.IconCompat;
 import ch.threema.app.BuildConfig;
 import ch.threema.app.R;
 import ch.threema.app.ThreemaApplication;
@@ -97,9 +85,10 @@ import ch.threema.app.services.ContactService;
 import ch.threema.app.services.DeadlineListService;
 import ch.threema.app.services.GroupService;
 import ch.threema.app.services.LockAppService;
-import ch.threema.app.services.PreferenceService;
+import ch.threema.app.services.NotificationPreferenceService;
 import ch.threema.app.services.RingtoneService;
 import ch.threema.app.utils.ConfigUtils;
+import ch.threema.app.utils.ContactUtil;
 import ch.threema.app.utils.DNDUtil;
 import ch.threema.app.utils.IntentDataUtil;
 import ch.threema.app.utils.NameUtil;
@@ -120,6 +109,17 @@ import ch.threema.storage.models.ServerMessageModel;
 import ch.threema.storage.models.group.IncomingGroupJoinRequestModel;
 import ch.threema.storage.models.group.OutgoingGroupJoinRequestModel;
 
+import static android.provider.Settings.System.DEFAULT_NOTIFICATION_URI;
+import static android.provider.Settings.System.DEFAULT_RINGTONE_URI;
+import static androidx.core.app.NotificationCompat.MessagingStyle.MAXIMUM_RETAINED_MESSAGES;
+import static ch.threema.app.ThreemaApplication.WORK_SYNC_NOTIFICATION_ID;
+import static ch.threema.app.backuprestore.csv.RestoreService.RESTORE_COMPLETION_NOTIFICATION_ID;
+import static ch.threema.app.utils.IntentDataUtil.PENDING_INTENT_FLAG_IMMUTABLE;
+import static ch.threema.app.voip.services.VoipCallService.EXTRA_ACTIVITY_MODE;
+import static ch.threema.app.voip.services.VoipCallService.EXTRA_CALL_ID;
+import static ch.threema.app.voip.services.VoipCallService.EXTRA_CONTACT_IDENTITY;
+import static ch.threema.app.voip.services.VoipCallService.EXTRA_IS_INITIATOR;
+
 public class NotificationServiceImpl implements NotificationService {
     private static final Logger logger = LoggingUtil.getThreemaLogger("NotificationServiceImpl");
     private static final long NOTIFY_AGAIN_TIMEOUT = 30 * DateUtils.SECOND_IN_MILLIS;
@@ -128,7 +128,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final @NonNull Context context;
     private final @NonNull LockAppService lockAppService;
     private final @NonNull DeadlineListService hiddenChatsListService;
-    private final @NonNull PreferenceService preferenceService;
+    private final @NonNull NotificationPreferenceService preferenceService;
     private final @NonNull RingtoneService ringtoneService;
     private @Nullable ContactService contactService = null;
     private @Nullable GroupService groupService = null;
@@ -152,7 +152,7 @@ public class NotificationServiceImpl implements NotificationService {
         @NonNull Context context,
         @NonNull LockAppService lockAppService,
         @NonNull DeadlineListService hiddenChatsListService,
-        @NonNull PreferenceService preferenceService,
+        @NonNull NotificationPreferenceService preferenceService,
         @NonNull RingtoneService ringtoneService
     ) {
         this.context = context;
@@ -215,6 +215,7 @@ public class NotificationServiceImpl implements NotificationService {
         return groupService;
     }
 
+    @Override
     @Deprecated
     public void deleteNotificationChannels() {
         if (ConfigUtils.supportsNotificationChannels()) {
@@ -574,7 +575,7 @@ public class NotificationServiceImpl implements NotificationService {
             logger.info(
                 "Showing notification {} sound: {}",
                 conversationNotification.getUid(),
-                notificationSchema.soundUri != null ? notificationSchema.soundUri.toString() : "null"
+                notificationSchema.soundUri != null ? notificationSchema.soundUri.toString() : null
             );
 
             showIconBadge(unreadMessagesCount);
@@ -587,15 +588,18 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Nullable
     private NotificationCompat.MessagingStyle getMessagingStyle(ConversationNotificationGroup group, ArrayList<ConversationNotification> notifications) {
-        if (getContactService() == null) {
+        getContactService();
+        if (contactService == null) {
+            logger.warn("Contact service is null");
             return null;
         }
+
 
         String chatName = group.name;
         boolean isGroupChat = group.messageReceiver instanceof GroupMessageReceiver;
         Person.Builder builder = new Person.Builder()
             .setName(context.getString(R.string.me_myself_and_i))
-            .setKey(getContactService().getUniqueIdString(getContactService().getMe()));
+            .setKey(ContactUtil.getUniqueIdString(getContactService().getMe().getIdentity()));
 
         Bitmap avatar = getContactService().getAvatar(getContactService().getMe(), false);
         if (avatar != null) {
@@ -744,7 +748,7 @@ public class NotificationServiceImpl implements NotificationService {
     @NonNull
     @Contract("_ -> new")
     private NotificationCompat.Action getThumbsUpAction(PendingIntent ackPendingIntent) {
-        return new NotificationCompat.Action.Builder(R.drawable.ic_thumb_up_white_24dp, context.getString(R.string.acknowledge), ackPendingIntent)
+        return new NotificationCompat.Action.Builder(R.drawable.emoji_thumbs_up, context.getString(R.string.acknowledge), ackPendingIntent)
             .setShowsUserInterface(false)
             .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_THUMBS_UP)
             .build();
@@ -783,13 +787,13 @@ public class NotificationServiceImpl implements NotificationService {
 
         if (this.preferenceService.isShowMessagePreview() && !hiddenChatsListService.has(uniqueId)) {
             if (numberOfUnreadMessagesForThisChat == 1 && newestGroup.messageReceiver instanceof ContactMessageReceiver && !hiddenChatsListService.has(uniqueId)) {
-                NotificationCompat.Action ackAction = new NotificationCompat.Action.Builder(R.drawable.ic_wear_full_ack,
+                NotificationCompat.Action ackAction = new NotificationCompat.Action.Builder(R.drawable.emoji_thumbs_up,
                     context.getString(R.string.acknowledge), ackPendingIntent)
                     .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_THUMBS_UP)
                     .build();
                 wearableExtender.addAction(ackAction);
 
-                NotificationCompat.Action decAction = new NotificationCompat.Action.Builder(R.drawable.ic_wear_full_decline,
+                NotificationCompat.Action decAction = new NotificationCompat.Action.Builder(R.drawable.emoji_thumbs_down,
                     context.getString(R.string.decline), decPendingIntent)
                     .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_THUMBS_DOWN)
                     .build();
@@ -1173,28 +1177,29 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void showSafeBackupFailed(int numDays) {
-        if (numDays > 0 && preferenceService.getThreemaSafeEnabled()) {
-            Intent intent = new Intent(context, BackupAdminActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PENDING_INTENT_FLAG_IMMUTABLE);
+    public void showSafeBackupFailed(int fullDaysSinceLastBackup) {
+        Intent intent = new Intent(context, BackupAdminActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PENDING_INTENT_FLAG_IMMUTABLE);
 
-            String content = String.format(this.context.getString(R.string.safe_failed_notification), numDays);
+        String content = String.format(this.context.getString(R.string.safe_failed_notification), fullDaysSinceLastBackup);
 
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationChannels.NOTIFICATION_CHANNEL_ALERT)
-                .setSmallIcon(R.drawable.ic_error_red_24dp)
-                .setTicker(content)
-                .setLocalOnly(true)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setCategory(NotificationCompat.CATEGORY_ERROR)
-                .setContentIntent(pendingIntent)
-                .setContentTitle(this.context.getString(R.string.app_name))
-                .setContentText(content)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(content));
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationChannels.NOTIFICATION_CHANNEL_ALERT)
+            .setSmallIcon(R.drawable.ic_error_red_24dp)
+            .setTicker(content)
+            .setLocalOnly(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ERROR)
+            .setContentIntent(pendingIntent)
+            .setContentTitle(this.context.getString(R.string.app_name))
+            .setContentText(content)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(content));
 
-            this.notify(ThreemaApplication.SAFE_FAILED_NOTIFICATION_ID, builder, null, NotificationChannels.NOTIFICATION_CHANNEL_ALERT);
-        } else {
-            this.cancel(ThreemaApplication.SAFE_FAILED_NOTIFICATION_ID);
-        }
+        this.notify(ThreemaApplication.SAFE_FAILED_NOTIFICATION_ID, builder, null, NotificationChannels.NOTIFICATION_CHANNEL_ALERT);
+    }
+
+    @Override
+    public void cancelSafeBackupFailed() {
+        this.cancel(ThreemaApplication.SAFE_FAILED_NOTIFICATION_ID);
     }
 
     @Override
@@ -1203,14 +1208,14 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void showNewSyncedContactsNotification(@Nullable List<ContactModel> contactModels) {
+    public void showNewSyncedContactsNotification(@Nullable List<ch.threema.data.models.ContactModel> contactModels) {
         if (contactModels != null && !contactModels.isEmpty()) {
             String message;
             Intent notificationIntent;
 
             if (contactModels.size() > 1) {
                 StringBuilder contactListBuilder = new StringBuilder();
-                for (ContactModel contactModel : contactModels) {
+                for (ch.threema.data.models.ContactModel contactModel : contactModels) {
                     if (contactListBuilder.length() > 0) {
                         contactListBuilder.append(", ");
                     }
@@ -1312,13 +1317,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void cancel(@NonNull String identity) {
-        if (contactService == null) {
-            logger.warn("Cannot cancel notification because contact service is null");
-            return;
-        }
-
-        int uniqueId = contactService.getUniqueId(identity);
-        String uniqueIdString = contactService.getUniqueIdString(identity);
+        int uniqueId = ContactUtil.getUniqueId(identity);
+        String uniqueIdString = ContactUtil.getUniqueIdString(identity);
 
         this.cancel(uniqueId, uniqueIdString);
     }

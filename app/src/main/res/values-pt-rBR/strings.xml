@@ -311,7 +311,7 @@
     <string name="state_dialog_edited">Editado</string>
     <string name="state_dialog_deleted">Excluído</string>
     <string name="state_dialog_status">Status</string>
-    <string name="title_tab_recent">Recente(s)</string>
+    <string name="title_tab_recent">Recentes</string>
     <string name="no_recent_conversations">Nenhuma conversa encontrada</string>
     <string name="save_changes">Salvar</string>
     <string name="group_created_confirm">Grupo criado com sucesso</string>
@@ -476,7 +476,7 @@ Por favor, insira uma pergunta para a sua enquete.</string>
     <string name="back">Voltar</string>
     <string name="wearable_reply">Responder</string>
     <string name="wearable_reply_label">Responder a %s</string>
-    <string name="message_acknowledged">Mensagem reconhecida</string>
+    <string name="message_acknowledged">“Polegar para cima” enviado</string>
     <string name="push_disable_text">Se continuar, o \"Push do Threema\" será usado em vez do serviço de push do sistema. Isso ajuda a reduzir sua pegada digital, mas requer que seu telefone seja configurado de modo a permitir que o aplicativo opere em segundo plano. É recomendado entrar em contato com o suporte do fabricante do seu dispositivo para auxílio com a configuração se as opções correspondentes não puderem ser encontradas nas configurações do dispositivo.</string>
     <string name="ballot_intermediate_results_show">Mostrar resultados intermediários</string>
     <string name="converting_video">Processando vídeo</string>
@@ -595,7 +595,7 @@ Por favor, insira uma pergunta para a sua enquete.</string>
     <string name="permission_storage_required">Para enviar mídia, permita que o Threema acesse o armazenamento.</string>
     <string name="permission_location_required">Para enviar uma localização, permita que o Threema acesse sua posição.</string>
     <string name="permission_contacts_required">Para enviar contatos, permita que o Threema leia os contatos.</string>
-    <string name="message_declined">\"Discordo\" enviado</string>
+    <string name="message_declined">“polegar para baixo” enviado</string>
     <string name="notifications_settings">Configurações de notificação</string>
     <string name="notifications_default">Configurações padrão</string>
     <string name="notifications_until">Até %s</string>
@@ -1521,6 +1521,17 @@ Por favor, insira uma pergunta para a sua enquete.</string>
     <string name="md_link_device_qr_scan_message">Escaneie o código QR</string>
     <string name="directory_request_failed">A solicitação de diretório falhou. Tente novamente.</string>
     <string name="add_shortcut_exists">Já existe um atalho para esta opção.</string>
+    <string name="scan_qr_code">Digitalize o código QR</string>
+    <string name="scan_qr_code_explain">Digitalize o código QR exibido na versão beta do Desktop %s no dispositivo que você deseja vincular.</string>
+    <string name="connecting">Conectando...</string>
+    <string name="trust_new_device">Confiar no novo dispositivo</string>
+    <string name="trust_new_device_explain">Selecione as mesmas imagens mostradas no novo dispositivo para confirmar que você confia nele.</string>
+    <string name="trust_new_device_info">O novo dispositivo armazenará uma cópia independente do seu perfil %s e as mensagens serão enviadas e recebidas em seu nome.</string>
+    <string name="no_match_question">Sem correspondência?</string>
+    <string name="sending_data">Enviando dados...</string>
+    <string name="continue_on_new_device">Continuar no novo dispositivo</string>
+    <string name="device_linked_successfully">Dispositivo vinculado com sucesso</string>
+    <string name="device_linked_successfully_explain">%s agora pode ser usado no dispositivo que você acabou de vincular (mesmo quando esse dispositivo está desligado ou não está conectado à Internet).</string>
     <string name="resend_message_dialog_title">Reenviar a mensagem de grupo?</string>
     <string name="resend_message_dialog_message">Esta mensagem não pôde ser enviada a todos os membros. Reenviar a mensagem para %1$s?</string>
     <string name="work_lost_credentials_help">Esqueceu das suas credenciais? Entre em contato com o seu administrador do %1$s.</string>
@@ -1565,6 +1576,10 @@ Por favor, insira uma pergunta para a sua enquete.</string>
     <string name="incoming_calls">Chamadas recebidas</string>
     <string name="group_chats">Conversas em grupo</string>
     <string name="edit_history_file_no_caption">Sem legenda</string>
+    <string name="device_linking_failed">Falha na vinculação do dispositivo</string>
+    <string name="device_linking_failed_explain">Não foi possível vincular o dispositivo. Tente novamente. \nMotivo: %s.</string>
+    <string name="qr_code_scan_error">Ocorreu um erro ao digitalizar o código QR</string>
+    <string name="verification_failed">Falha na verificação</string>
     <!-- accessibility -->
     <string name="cd_ack_icon">aceitação enviada</string>
     <string name="cd_dec_icon">recusa enviada</string>
@@ -1576,6 +1591,20 @@ Por favor, insira uma pergunta para a sua enquete.</string>
     <string name="cd_message_details_container">detalhes da mensagem</string>
     <string name="cd_enable_formatting">Ativar formatação</string>
     <string name="cd_message">mensagem</string>
+    <string name="reactions_on_this_message">Todas as reações</string>
+    <string name="select_emoji_content_description">Selecione um emoji para adicionar no seletor de emojis</string>
+    <string name="group_emoji_reactions_partially_supported">Alguns não verão suas reações devido a uma versão antiga.</string>
+    <string name="tab_emoji_reactions_overview_content_description">%1$s reações com %2$s</string>
+    <string name="emoji_reactions_compatibility_infobox_text">Você recebeu reações de emoji de um contato que tem uma versão mais recente do aplicativo. Além de 👍 e 👎, sua versão do aplicativo ainda não suporta o envio de reações de emoji.</string>
+    <string name="reaction_cannot_be_displayed">Essa reação não pode ser exibida. Emoji desconhecido.</string>
+    <string name="emoji_reactions_unavailable_title">Reações de emoji indisponíveis</string>
+    <string name="emoji_reactions_sending_not_supported_body">Sua versão do aplicativo ainda não suporta o envio de reações de emoji.</string>
+    <string name="emoji_reactions_unavailable_body">%1$s está usando uma versão do aplicativo que ainda não é compatível com esse recurso.</string>
+    <string name="emoji_reactions_unavailable_group_body">Você não pode reagir a essa mensagem com um emoji porque nenhum membro do grupo tem uma versão do aplicativo que é compatível com esse recurso.</string>
+    <string name="emoji_reactions_cannot_remove_title">Remoção de reações indisponível</string>
+    <string name="emoji_reactions_cannot_remove_body">%1$s está usando uma versão do aplicativo que ainda não suporta a remoção de reações de emoji ou o envio de mais de uma reação de emoji. Você ainda pode substituir 👍 por 👎 ou vice-versa.</string>
+    <string name="emoji_reactions_cannot_remove_group_body">Nenhum dos membros do grupo está usando uma versão do aplicativo que suporta a remoção de reações de emoji ou o envio de mais de uma reação de emoji. Você pode substituir 👍 por 👎 ou vice-versa.</string>
+    <string name="emoji_reactions_cannot_remove_v1_body">Sua versão do aplicativo ainda não suporta a remoção de reações de emoji ou o envio de mais de uma reação de emoji.</string>
     <plurals name="contacts_counter_label">
         <item quantity="one">%d contato</item>
         <item quantity="other">%d contatos</item>

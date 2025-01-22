@@ -217,6 +217,9 @@ public class ConfigUtils {
     public static boolean isSamsungDevice() {
         return (Build.MANUFACTURER.equalsIgnoreCase("Samsung"));
     }
+    public static boolean isMotorolaDevice() {
+        return (Build.MANUFACTURER.equalsIgnoreCase("motorola"));
+    }
 
     public static boolean isSonyDevice() {
         return (Build.MANUFACTURER.equalsIgnoreCase("Sony"));
@@ -337,9 +340,10 @@ public class ConfigUtils {
      */
     public static @NonNull SSLSocketFactory getSSLSocketFactory(String host) {
         return new TLSUpgradeSocketFactoryWrapper(
-            ConfigUtils.isOnPremBuild() ?
-                HttpsURLConnection.getDefaultSSLSocketFactory() :
-                TrustKit.getInstance().getSSLSocketFactory(host));
+            ConfigUtils.isOnPremBuild()
+                ? HttpsURLConnection.getDefaultSSLSocketFactory()
+                : TrustKit.getInstance().getSSLSocketFactory(host)
+        );
     }
 
     public static boolean isXiaomiDevice() {
@@ -730,6 +734,14 @@ public class ConfigUtils {
         return false;
     }
 
+	/**
+	 * Whether this version of the app is allowed to send emoji reactions to other clients that support them
+	 * aka V2
+	 * @return true if this version of the app is allowed to send emoji reactions
+	 */
+	public static boolean canSendEmojiReactions() {
+		return BuildConfig.EMOJI_REACTIONS_ENABLED;
+	}
 
     /**
      * Returns true if this is a work build and app is under control of a device policy controller (DPC) or Threema MDM

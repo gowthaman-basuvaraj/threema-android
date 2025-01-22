@@ -477,7 +477,7 @@ Voer een vraag in voor uw poll.</string>
     <string name="back">Terug</string>
     <string name="wearable_reply">Antwoorden</string>
     <string name="wearable_reply_label">Antwoorden aan %s</string>
-    <string name="message_acknowledged">«Akkoord» verstuurd</string>
+    <string name="message_acknowledged">\"Duimen omhoog\" verstuurd</string>
     <string name="push_disable_text">Als u doorgaat, wordt \"Threema Push\" gebruikt in plaats van de push-dienst van het systeem. Dit helpt bij het verminderen van uw digitale voetafdruk, maar uw telefoon moet wel geconfigureerd zijn zodat de app op de achtergrond kan draaien. Als u de overeenkomende opties niet kunt vinden in de apparaatinstellingen, kunt u contact opnemen met het ondersteuningsteam van de fabrikant voor hulp bij de configuratie.</string>
     <string name="ballot_intermediate_results_show">Tussentijdse resultaten tonen</string>
     <string name="converting_video">Video verwerken</string>
@@ -595,7 +595,7 @@ Voer een vraag in voor uw poll.</string>
     <string name="permission_storage_required">Geeft Threema toegang tot uw opslag om media te kunnen versturen.</string>
     <string name="permission_location_required">Geef Threema toegang tot uw locatie om een locatie te kunnen versturen.</string>
     <string name="permission_contacts_required">Geef Threema leestoegang tot uw contactpersonen om contactpersonen te kunnen versturen.</string>
-    <string name="message_declined">«Niet akkoord» verstuurd</string>
+    <string name="message_declined">\"Duimen omlaag\" verzonden</string>
     <string name="notifications_settings">Meldingsinstellingen</string>
     <string name="notifications_default">Standaardinstellingen</string>
     <string name="notifications_until">Tot %s</string>
@@ -1521,6 +1521,17 @@ Weet u zeker dat u Threema anoniem wil gebruiken?</string>
     <string name="md_link_device_qr_scan_message">Scan de QR-code</string>
     <string name="directory_request_failed">Directory-aanvraag is mislukt. Probeer het opnieuw.</string>
     <string name="add_shortcut_exists">Er bestaat al een snelkoppeling voor dit doel.</string>
+    <string name="scan_qr_code">Scan QR-code</string>
+    <string name="scan_qr_code_explain">Scan de QR-code die wordt weergegeven in de bètaversie van %s Desktop op het apparaat dat je wilt koppelen.</string>
+    <string name="connecting">Verbinden...</string>
+    <string name="trust_new_device">Nieuw apparaat vertrouwen</string>
+    <string name="trust_new_device_explain">Selecteer dezelfde afbeeldingen als op het nieuwe apparaat om te bevestigen dat je het vertrouwt.</string>
+    <string name="trust_new_device_info">Het nieuwe apparaat zal een onafhankelijke kopie van je %s profiel opslaan en berichten zullen namens jou worden verzonden en ontvangen.</string>
+    <string name="no_match_question">Geen match?</string>
+    <string name="sending_data">Gegevens verzenden...</string>
+    <string name="continue_on_new_device">Ga door op nieuw apparaat</string>
+    <string name="device_linked_successfully">Apparaat succesvol gekoppeld</string>
+    <string name="device_linked_successfully_explain">%s kan nu worden gebruikt op het apparaat dat je zojuist hebt gekoppeld (zelfs als dit apparaat is uitgeschakeld of niet is verbonden met het internet).</string>
     <string name="resend_message_dialog_title">Het groepsbericht opnieuw verzenden?</string>
     <string name="resend_message_dialog_message">Dit bericht is niet naar alle leden verzonden. Het bericht opnieuw verzenden naar %1$s?</string>
     <string name="work_lost_credentials_help">Bent u uw toegangsgegevens vergeten? Neem contact op met de beheerder van %1$s.</string>
@@ -1565,6 +1576,10 @@ Weet u zeker dat u Threema anoniem wil gebruiken?</string>
     <string name="incoming_calls">Inkomende oproepen</string>
     <string name="group_chats">Groepschats</string>
     <string name="edit_history_file_no_caption">Geen bijschrift</string>
+    <string name="device_linking_failed">Apparaatkoppeling mislukt</string>
+    <string name="device_linking_failed_explain">Het apparaat kon niet gekoppeld worden. Probeer het opnieuw.\nReden: %s.</string>
+    <string name="qr_code_scan_error">Er is een fout opgetreden tijdens het scannen van de QR-code</string>
+    <string name="verification_failed">Verificatie mislukt</string>
     <!-- accessibility -->
     <string name="cd_ack_icon">akkoord verzonden</string>
     <string name="cd_dec_icon">niet akkoord verzonden</string>
@@ -1576,6 +1591,20 @@ Weet u zeker dat u Threema anoniem wil gebruiken?</string>
     <string name="cd_message_details_container">berichtgegevens</string>
     <string name="cd_enable_formatting">Opmaak inschakelen</string>
     <string name="cd_message">bericht</string>
+    <string name="reactions_on_this_message">Alle reacties</string>
+    <string name="select_emoji_content_description">Selecteer de toe te voegen emoji uit de emoji-kiezer</string>
+    <string name="group_emoji_reactions_partially_supported">Sommigen zullen je reacties niet zien vanwege een oude versie.</string>
+    <string name="tab_emoji_reactions_overview_content_description">%1$s reacties met %2$s</string>
+    <string name="emoji_reactions_compatibility_infobox_text">Je hebt emoji-reacties ontvangen van een contactpersoon die een nieuwere app-versie heeft. Naast 👍 en 👎 ondersteunt jouw app-versie nog geen emoji-reacties.</string>
+    <string name="reaction_cannot_be_displayed">Deze reactie kan niet worden weergegeven. Onbekende emoji.</string>
+    <string name="emoji_reactions_unavailable_title">Emoji-reacties niet beschikbaar</string>
+    <string name="emoji_reactions_sending_not_supported_body">Je app-versie ondersteunt het verzenden van emoji-reacties nog niet.</string>
+    <string name="emoji_reactions_unavailable_body">%1$s gebruikt een app-versie die deze functie nog niet ondersteunt.</string>
+    <string name="emoji_reactions_unavailable_group_body">Je kunt niet op dit bericht reageren met een emoji omdat geen enkel groepslid een app-versie heeft die deze functie ondersteunt.</string>
+    <string name="emoji_reactions_cannot_remove_title">Reacties verwijderen niet beschikbaar</string>
+    <string name="emoji_reactions_cannot_remove_body">%1$s gebruikt een app-versie die het verwijderen van emoji-reacties of het verzenden van meer dan één emoji-reactie nog niet ondersteunt. Je kunt 👍 nog steeds vervangen door 👎 of andersom.</string>
+    <string name="emoji_reactions_cannot_remove_group_body">Geen van de groepsleden gebruikt een versie van de app die het verwijderen van emoji-reacties of het verzenden van meer dan één emoji-reactie ondersteunt. Je kunt 👍 vervangen door 👎 of andersom.</string>
+    <string name="emoji_reactions_cannot_remove_v1_body">Je app-versie ondersteunt nog niet het verwijderen van emoji-reacties of het verzenden van meer dan één emoji-reactie.</string>
     <plurals name="contacts_counter_label">
         <item quantity="one">%d contactpersoon</item>
         <item quantity="other">%d contactpersonen</item>

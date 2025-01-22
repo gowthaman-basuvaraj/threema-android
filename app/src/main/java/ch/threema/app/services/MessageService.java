@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
@@ -47,12 +48,17 @@ import ch.threema.app.ui.MediaItem;
 import ch.threema.app.voip.groupcall.GroupCallDescription;
 import ch.threema.base.ProgressListener;
 import ch.threema.base.ThreemaException;
+import ch.threema.domain.models.GroupId;
 import ch.threema.domain.models.MessageId;
 import ch.threema.domain.protocol.csp.MessageTooLongException;
 import ch.threema.domain.protocol.csp.messages.AbstractGroupMessage;
 import ch.threema.domain.protocol.csp.messages.AbstractMessage;
-import ch.threema.domain.protocol.csp.messages.DeliveryReceiptMessage;
-import ch.threema.domain.protocol.csp.messages.GroupDeliveryReceiptMessage;
+import ch.threema.domain.protocol.csp.messages.BadMessageException;
+import ch.threema.domain.protocol.csp.messages.ballot.BallotSetupInterface;
+import ch.threema.domain.protocol.csp.messages.file.FileData;
+import ch.threema.domain.protocol.csp.messages.fs.ForwardSecurityMode;
+import ch.threema.domain.taskmanager.TriggerSource;
+import ch.threema.protobuf.csp.e2e.Reaction;
 import ch.threema.storage.models.AbstractMessageModel;
 import ch.threema.storage.models.ContactModel;
 import ch.threema.storage.models.DistributionListMessageModel;
@@ -200,10 +206,10 @@ public interface MessageService {
 
     AbstractMessageModel sendText(String message, MessageReceiver receiver) throws Exception;
 
-    AbstractMessageModel sendLocation(@NonNull Location location, String poiName, MessageReceiver receiver, CompletionHandler completionHandler) throws ThreemaException;
+    AbstractMessageModel sendLocation(@NonNull Location location, @Nullable String poiName, MessageReceiver receiver, CompletionHandler completionHandler) throws ThreemaException;
 
     /**
-     * Edit a message's text, send it to a receiver and save the editet message as described in saveEditedMessageText.
+     * Edit a message's text, send it to a receiver and save the edited message as described in saveEditedMessageText.
      *
      * @param message original message to edit
      * @param newText new message text
@@ -220,12 +226,44 @@ public interface MessageService {
      */
     void saveEditedMessageText(@NonNull AbstractMessageModel message, String text, @Nullable Date editedAt);
 
-    /**
-     * Delete a message's content and any related edit history entries
+	/**
+	 * Save a reaction message
+	 *
+	 * @param targetMessage Message model this reaction refers to
+	 * @param senderIdentity Identity of the sender of this message
+	 * @param actionCase The action to take
+	 * @param emojiSequence The emoji for the reaction
+	 */
+	void saveEmojiReactionMessage(@NonNull AbstractMessageModel targetMessage, @NonNull String senderIdentity, Reaction.ActionCase actionCase, @NonNull String emojiSequence);
+
+	/**
+	 * Clear the MessageState of the supplied message if the current state is either USERACK or USERDEC
+	 * @param targetMessage Message to clear the state for
+	 */
+    // TODO(ANDR-3325): Remove ACK/DEC compatibility
+	void clearMessageState(@NonNull AbstractMessageModel targetMessage);
+
+	/**
+	 * Send an emoji reaction to a receiver and save it locally.
+     * If the emoji reaction is not a fully-qualified emoji sequence, nothing is sent and `true` is returned
+	 * Performs "Legacy Reaction Mapping Steps" and sends an ack / dec message to some or all receivers instead if applicable.
+	 *
+	 * @param message message to react to
+	 * @param emojiSequence emoji sequence of the reaction
+	 * @param receiver receiver to send the reaction to
+	 * @param markAsRead true if the message should be marked as read
+	 * @return false if and only if sending failed for compatibility reasons
+     *         true if the reaction has been sent, or the emojiSequence is not a fully-qualified emoji sequence
+	 */
+	@WorkerThread
+	boolean sendEmojiReaction(@NonNull AbstractMessageModel message, @NonNull String emojiSequence, @NonNull MessageReceiver receiver, boolean markAsRead) throws ThreemaException;
+
+	/**
+     * Delete a message's content and any related data (e.g. edit history, emoji reactions)
      *
      * @param message original message to delete
      */
-    void deleteMessageContentsAndEditHistory(@NonNull AbstractMessageModel message, Date deletedAt);
+    void deleteMessageContentsAndRelatedData(@NonNull AbstractMessageModel message, Date deletedAt);
 
     String getCorrelationId();
 
@@ -244,9 +282,6 @@ public interface MessageService {
     @WorkerThread
     AbstractMessageModel sendMedia(@NonNull List<MediaItem> mediaItems, @NonNull List<MessageReceiver> messageReceivers, @Nullable MessageServiceImpl.SendResultListener sendResultListener);
 
-    @WorkerThread
-    boolean sendUserAcknowledgement(@NonNull AbstractMessageModel messageModel, boolean markAsRead);
-
     /**
      * Resend the message. Note that this is always triggered by a user interaction and therefore
      * creates a new task.
@@ -259,43 +294,57 @@ public interface MessageService {
         @NonNull AbstractMessageModel messageModel,
         @NonNull MessageReceiver<AbstractMessageModel> receiver,
         @Nullable CompletionHandler completionHandler,
-        @NonNull Collection<String> recipientIdentities
+        @NonNull Collection<String> recipientIdentities,
+        @NonNull MessageId messageId,
+        @NonNull TriggerSource triggerSource
     ) throws Exception;
 
-    AbstractMessageModel sendBallotMessage(BallotModel ballotModel) throws MessageTooLongException;
+    AbstractMessageModel sendBallotMessage(
+        @NonNull BallotModel ballotModel,
+        @NonNull MessageId messageId,
+        @NonNull TriggerSource triggerSource
+    ) throws MessageTooLongException;
 
-    @WorkerThread
-    boolean sendUserDecline(@NonNull AbstractMessageModel messageModel, boolean markAsRead);
+	boolean sendGroupDeliveryReceipt(@NonNull Set<String> identities, GroupMessageModel messageModel, int receiptType);
 
-    void updateMessageState(@NonNull final MessageId apiMessageId, MessageState state, @NonNull DeliveryReceiptMessage stateMessage);
+	/**
+	 * Update message state of an outgoing message. Note that the state is only changed if it is a
+	 * legal transition. E.g. a message's state won't be changed from read to delivered. See
+	 * {@link ch.threema.app.utils.MessageUtil#canChangeToState(MessageState, MessageState, boolean)}
+	 * for possible state transitions.
+	 *
+	 * The corresponding timestamps are changed in any case. E.g. the delivered at timestamp will be
+	 * saved even if the message has already been marked as read.
+	 *
+	 * Do not use this method for reactions: Use
+	 * {@link #addMessageReaction(AbstractMessageModel, MessageState, String, Date)} instead.
+	 *
+	 * @param messageModel the message model that should be updated
+	 * @param state        the mew state
+	 * @param date         the date of the state change
+	 */
+	void updateOutgoingMessageState(
+		@NonNull final AbstractMessageModel messageModel,
+		@NonNull MessageState state,
+		@NonNull Date date
+	);
 
-    void updateGroupMessageState(@NonNull final MessageId apiMessageId, @NonNull MessageState state, @NonNull GroupDeliveryReceiptMessage stateMessage);
+	/**
+	 * Add a reaction to a contact or group message.
+	 *
+	 * @param messageModel the message model that should be updated
+	 * @param state        the reaction (as state, but only ACK and DEC allowed)
+	 * @param fromIdentity the identity that reacted to the message
+	 * @param date         the date of the state change
+	 */
+	void addMessageReaction(
+		@NonNull AbstractMessageModel messageModel,
+		@NonNull MessageState state,
+		@NonNull String fromIdentity,
+		@NonNull Date date
+	);
 
-    /**
-     * Update the message state of a contact message. Currently only used for server acks.
-     *
-     * @param messageId         the message id of the message
-     * @param recipientIdentity the recipient of the message
-     * @param state             the new state
-     * @param stateDate         the date of state change
-     */
-    boolean updateContactMessageState(
-        @NonNull final MessageId messageId,
-        @NonNull String recipientIdentity,
-        @NonNull MessageState state,
-        @Nullable Date stateDate
-    );
-
-    /**
-     * Update message state of outgoing message. Currently only used for server acks.
-     *
-     * @param messageModel the message model that should be updated
-     * @param state        the mew state
-     * @param stateDate    the date of state change
-     */
-    boolean updateMessageState(@NonNull final AbstractMessageModel messageModel, @NonNull MessageState state, @Nullable Date stateDate);
-
-    boolean markAsRead(AbstractMessageModel message, boolean silent) throws ThreemaException;
+	boolean markAsRead(AbstractMessageModel message, boolean silent) throws ThreemaException;
 
     @WorkerThread
     boolean markAsConsumed(AbstractMessageModel message) throws ThreemaException;
@@ -348,23 +397,61 @@ public interface MessageService {
     @Nullable
     MessageModel getContactMessageModel(final Integer id);
 
-    @Nullable
+	@Nullable
+	MessageModel getContactMessageModel(String uid);
+
+	@Nullable
     GroupMessageModel getGroupMessageModel(final Integer id);
 
-    @Nullable
+	@Nullable
+	GroupMessageModel getGroupMessageModel(String uid);
+
+	@Nullable
     DistributionListMessageModel getDistributionListMessageModel(long id);
 
-    MessageString getMessageString(AbstractMessageModel messageModel, int maxLength);
+	/**
+	 * Get the contact message model by message id and identity.
+	 */
+	@Nullable
+	MessageModel getContactMessageModel(
+		@NonNull final MessageId messageId,
+		@NonNull final String identity
+	);
 
-    MessageString getMessageString(AbstractMessageModel messageModel, int maxLength, boolean withPrefix);
+	/**
+	 * Get the group message model by message id, creator identity, and group id.
+	 */
+	@Nullable
+	GroupMessageModel getGroupMessageModel(
+		@NonNull MessageId messageId,
+		@NonNull String creatorIdentity,
+		@NonNull GroupId groupId
+	);
+
+	MessageString getMessageString(AbstractMessageModel messageModel, int maxLength);
+	MessageString getMessageString(AbstractMessageModel messageModel, int maxLength, boolean withPrefix);
 
     void saveIncomingServerMessage(ServerMessageModel msg);
+
+    boolean downloadThumbnailIfPresent(@NonNull FileData fileData, @NonNull AbstractMessageModel messageModel) throws Exception;
+
+    boolean shouldAutoDownload(@NonNull AbstractMessageModel messageModel);
 
     boolean downloadMediaMessage(AbstractMessageModel mediaMessageModel, ProgressListener progressListener) throws Exception;
 
     boolean cancelMessageDownload(AbstractMessageModel messageModel);
 
     void cancelMessageUpload(AbstractMessageModel messageModel);
+
+    AbstractMessageModel saveBallotCreateMessage(
+        @NonNull MessageReceiver<?> receiver,
+        @NonNull MessageId messageId,
+        @NonNull BallotSetupInterface message,
+        @Nullable AbstractMessageModel messageModel,
+        int messageFlags,
+        @Nullable ForwardSecurityMode forwardSecurityMode,
+        @NonNull TriggerSource triggerSource
+        ) throws ThreemaException, BadMessageException;
 
     /**
      * Get all messages in any chat that match the specified criteria - excluding distribution lists

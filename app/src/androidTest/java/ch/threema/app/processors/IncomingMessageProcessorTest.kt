@@ -31,7 +31,7 @@ import ch.threema.domain.protocol.csp.ProtocolDefines.DELIVERYRECEIPT_MSGUSERACK
 import ch.threema.domain.protocol.csp.ProtocolDefines.DELIVERYRECEIPT_MSGUSERDEC
 import ch.threema.domain.protocol.csp.messages.AbstractMessage
 import ch.threema.domain.protocol.csp.messages.DeliveryReceiptMessage
-import ch.threema.domain.protocol.csp.messages.LocationMessage
+import ch.threema.domain.protocol.csp.messages.location.LocationMessage
 import ch.threema.domain.protocol.csp.messages.TextMessage
 import ch.threema.domain.protocol.csp.messages.TypingIndicatorMessage
 import ch.threema.domain.protocol.csp.messages.ballot.BallotData
@@ -41,16 +41,15 @@ import ch.threema.domain.protocol.csp.messages.ballot.BallotId
 import ch.threema.domain.protocol.csp.messages.ballot.BallotVote
 import ch.threema.domain.protocol.csp.messages.ballot.PollSetupMessage
 import ch.threema.domain.protocol.csp.messages.ballot.PollVoteMessage
+import ch.threema.domain.protocol.csp.messages.location.LocationMessageData
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.fail
 import org.junit.Test
 import java.util.Date
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @DangerousTest
 class IncomingMessageProcessorTest : MessageProcessorProvider() {
 
@@ -64,12 +63,16 @@ class IncomingMessageProcessorTest : MessageProcessorProvider() {
 
     @Test
     fun testIncomingLocationMessage() = runTest {
-        assertSuccessfulMessageProcessing(LocationMessage().also {
-            it.longitude = 0.0
-            it.longitude = 0.0
-        }.enrich(), contactA)
-
-        assertSuccessfulMessageProcessing(LocationMessage().enrich(), contactA)
+        val locationMessageData = LocationMessageData(
+            latitude = 0.0,
+            longitude = 0.0,
+            accuracy = null,
+            poi = null
+        )
+        assertSuccessfulMessageProcessing(
+            message = LocationMessage(locationMessageData = locationMessageData).enrich(),
+            fromContact = contactA
+        )
     }
 
     @Test
@@ -93,9 +96,9 @@ class IncomingMessageProcessorTest : MessageProcessorProvider() {
         }
 
         val pollSetupMessage = PollSetupMessage().also {
-            it.ballotCreator = ballotCreator
+            it.ballotCreatorIdentity = ballotCreator
             it.ballotId = ballotId
-            it.data = ballotData
+            it.ballotData = ballotData
         }.enrich()
 
         // Test a valid ballot setup message that opens a poll
@@ -103,12 +106,9 @@ class IncomingMessageProcessorTest : MessageProcessorProvider() {
 
         val pollVoteMessage = PollVoteMessage().also { voteMessage ->
             voteMessage.ballotId = ballotId
-            voteMessage.ballotCreator = ballotCreator
-            voteMessage.ballotVotes.addAll(List(5) { index ->
-                BallotVote().also {
-                    it.id = index
-                    it.value = 0
-                }
+            voteMessage.ballotCreatorIdentity = ballotCreator
+            voteMessage.votes.addAll(List(5) { index ->
+                BallotVote(index, 0)
             })
         }.enrich()
 
@@ -226,7 +226,7 @@ class IncomingMessageProcessorTest : MessageProcessorProvider() {
         )
 
         val expectDeliveryReceiptSent = message.sendAutomaticDeliveryReceipt()
-                && !message.hasFlags(ProtocolDefines.MESSAGE_FLAG_NO_DELIVERY_RECEIPTS)
+            && !message.hasFlags(ProtocolDefines.MESSAGE_FLAG_NO_DELIVERY_RECEIPTS)
         if (expectDeliveryReceiptSent) {
             val deliveryReceiptMessage = sentMessagesInsideTask.poll()
             if (deliveryReceiptMessage is DeliveryReceiptMessage) {

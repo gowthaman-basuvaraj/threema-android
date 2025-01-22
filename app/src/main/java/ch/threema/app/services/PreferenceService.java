@@ -28,8 +28,6 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Date;
@@ -42,6 +40,7 @@ import ch.threema.app.threemasafe.ThreemaSafeServerInfo;
 import ch.threema.app.utils.ConfigUtils;
 import ch.threema.domain.protocol.api.work.WorkDirectoryCategory;
 import ch.threema.domain.protocol.api.work.WorkOrganization;
+import ch.threema.domain.taskmanager.TriggerSource;
 
 public interface PreferenceService {
 	@Retention(RetentionPolicy.SOURCE)
@@ -78,7 +77,7 @@ public interface PreferenceService {
 
 	int PROFILEPIC_RELEASE_NOBODY = 0;
 	int PROFILEPIC_RELEASE_EVERYONE = 1;
-	int PROFILEPIC_RELEASE_SOME = 2;
+	int PROFILEPIC_RELEASE_ALLOW_LIST = 2;
 
 	int PRIVACY_POLICY_ACCEPT_NONE = 0;
 	int PRIVACY_POLICY_ACCEPT_EXCPLICIT = 1;
@@ -91,7 +90,7 @@ public interface PreferenceService {
 	String VIDEO_CODEC_SW = "sw";
 
 	boolean isReadReceipts();
-	void setReadReceipts(boolean value);
+	void setReadReceipts(boolean value, @NonNull TriggerSource triggerSource);
 
 	boolean isSyncContacts();
 
@@ -99,32 +98,20 @@ public interface PreferenceService {
 
 	boolean isBlockUnknown();
 
-	void setBlockUnknown(boolean value);
+	void setBlockUnknown(boolean value, @NonNull TriggerSource triggerSource);
 
 	boolean isTypingIndicator();
-	void setTypingIndicator(boolean value);
-
-	Uri getNotificationSound();
-
-	Uri getGroupNotificationSound();
-
-	Uri getGroupCallRingtone();
+	void setTypingIndicator(boolean value, @NonNull TriggerSource triggerSource);
 
 	Uri getVoiceCallSound();
 
 	boolean isVoiceCallVibrate();
-
-	boolean isGroupCallVibrate();
 
 	void setNotificationSound(Uri uri);
 
 	void setGroupNotificationSound(Uri uri);
 
 	void setVoiceCallSound(Uri uri);
-
-	boolean isVibrate();
-
-	boolean isGroupVibrate();
 
 	HashMap<String, String> getRingtones();
 
@@ -139,8 +126,6 @@ public interface PreferenceService {
 	boolean isInAppSounds();
 
 	boolean isInAppVibrate();
-
-	boolean isShowMessagePreview();
 
 	@ImageScale int getImageScale();
 
@@ -186,8 +171,6 @@ public interface PreferenceService {
 
 	boolean isSaveMedia();
 
-	boolean isMasterKeyNewMessageNotifications();
-
 	boolean isPinSet();
 
 	boolean setPin(String newCode);
@@ -221,8 +204,6 @@ public interface PreferenceService {
 
 	/**
 	 * value in seconds!
-	 *
-	 * @return
 	 */
 	int getPinLockGraceTime();
 
@@ -252,13 +233,9 @@ public interface PreferenceService {
 
 	void clear();
 
-	public List<String[]> write();
+	List<String[]> write();
 
 	boolean read(List<String[]> values);
-
-	Integer getRoutineInterval(String key);
-
-	void setRoutineInterval(String key, Integer intervalSeconds);
 
 	boolean showInactiveContacts();
 
@@ -301,15 +278,9 @@ public interface PreferenceService {
 
 	int getLockoutAttempts();
 
-	void setWizardRunning(boolean running);
-
-	boolean getWizardRunning();
-
 	boolean isAnimationAutoplay();
 
 	boolean isUseProximitySensor();
-
-	void setBlockUnkown(Boolean booleanPreset);
 
 	void setAppLogoExpiresAt(Date expiresAt, @ConfigUtils.AppThemeSetting String theme);
 
@@ -419,10 +390,6 @@ public interface PreferenceService {
 
 	boolean allowWebrtcIpv6();
 
-	int getNotificationPriority();
-
-	void setNotificationPriority(int value);
-
 	Set<String> getMobileAutoDownload();
 
 	Set<String> getWifiAutoDownload();
@@ -503,6 +470,17 @@ public interface PreferenceService {
 	void setWorkSyncCheckInterval(int checkInterval);
 	int getWorkSyncCheckInterval();
 
+	/**
+	 * Store the interval for the identity state sync in seconds.
+	 * @param syncIntervalS The sync interval in seconds
+	 */
+	void setIdentityStateSyncInterval(int syncIntervalS);
+
+	/**
+	 * @return The identity state sync interval in seconds
+	 */
+	int getIdentityStateSyncIntervalS();
+
 	boolean getIsExportIdTooltipShown();
 
 	void setThreemaSafeMDMConfig(String mdmConfigHash);
@@ -561,8 +539,6 @@ public interface PreferenceService {
 
 	boolean getCameraPermissionRequestShown();
 	void setCameraPermissionRequestShown(boolean shown);
-
-	boolean getDisableSmartReplies();
 
 	@Nullable String getPoiServerHostOverride();
 

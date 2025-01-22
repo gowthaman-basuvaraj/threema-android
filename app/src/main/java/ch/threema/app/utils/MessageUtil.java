@@ -23,10 +23,6 @@ package ch.threema.app.utils;
 
 import android.content.Context;
 
-import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -36,6 +32,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import androidx.annotation.DrawableRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import ch.threema.app.R;
 import ch.threema.app.ThreemaApplication;
 import ch.threema.app.adapters.decorators.GroupStatusAdapterDecorator;
@@ -59,6 +58,7 @@ import ch.threema.storage.models.GroupMessageModel;
 import ch.threema.storage.models.MessageModel;
 import ch.threema.storage.models.MessageState;
 import ch.threema.storage.models.MessageType;
+import ch.threema.storage.models.data.LocationDataModel;
 import ch.threema.storage.models.data.MessageContentsType;
 import ch.threema.storage.models.data.status.ForwardSecurityStatusDataModel;
 import ch.threema.storage.models.data.status.GroupCallStatusDataModel;
@@ -267,18 +267,14 @@ public class MessageUtil {
 							|| messageState == MessageState.SENDING
 							|| (messageState == MessageState.PENDING && messageModel.getType() != MessageType.BALLOT);
 					} else {
-						showState = messageModel.getState() == MessageState.CONSUMED
-							|| messageModel.getState() == MessageState.USERACK
-							|| messageModel.getState() == MessageState.USERDEC;
+						showState = messageModel.getState() == MessageState.CONSUMED;
 					}
 				}
 			} else if (messageModel instanceof MessageModel) {
 				if (!messageModel.isOutbox()) {
 					// inbox show icon only on acknowledged/declined or consumed
 					showState = messageState != null
-							&& (messageModel.getState() == MessageState.USERACK
-							|| messageModel.getState() == MessageState.USERDEC
-							|| messageModel.getState() == MessageState.CONSUMED);
+							&& messageModel.getState() == MessageState.CONSUMED;
 				}
 				else {
 					// on outgoing message
@@ -353,6 +349,7 @@ public class MessageUtil {
 
 	/**
 	 * Check if a MessageState change from fromState to toState is allowed
+	 *
 	 * @param fromState State from which a state change is requested
 	 * @param toState State to which a state change is requested
 	 * @param isGroupMessage true, if it's a group message
@@ -465,15 +462,16 @@ public class MessageUtil {
 	}
 
 	/**
-	 * Check if the provided MessageState is acceptable as a group message state and should be saved to the database
-	 * @param state MessageState
-	 * @return true if MessageState is acceptable, false otherwise
+	 * Check if the provided MessageState is a user reaction.
+	 *
+	 * @param state the message state
+	 * @return true if it is a user reaction, false otherwise
 	 */
-	public static boolean isAllowedGroupMessageState(MessageState state) {
+	public static boolean isReaction(MessageState state) {
 		return state == MessageState.USERACK || state == MessageState.USERDEC;
 	}
 
-	public static class MessageViewElement {
+    public static class MessageViewElement {
 		public final @Nullable @DrawableRes Integer icon;
 		public final @Nullable String placeholder;
 		public final @Nullable Integer color;
@@ -511,18 +509,21 @@ public class MessageUtil {
 							null,
 							null);
 				case LOCATION:
-					String locationText = null;
-					if (!TestUtil.isEmptyOrNull(messageModel.getLocationData().getPoi())) {
-						locationText = messageModel.getLocationData().getPoi();
-					} else if (!TestUtil.isEmptyOrNull(messageModel.getLocationData().getAddress())) {
-						locationText = messageModel.getLocationData().getAddress();
+                    final @NonNull LocationDataModel locationDataModel = messageModel.getLocationData();
+					@Nullable String locationText = null;
+					if (locationDataModel.poiNameOrNull != null) {
+						locationText = locationDataModel.poiNameOrNull;
+					} else if (locationDataModel.poiAddressOrNull != null) {
+						locationText = locationDataModel.poiAddressOrNull;
 					}
 
-					return new MessageViewElement(R.drawable.ic_location_on_filled,
-							context.getString(R.string.location_placeholder),
-							locationText,
-							null,
-							null);
+					return new MessageViewElement(
+                        R.drawable.ic_location_on_filled,
+                        context.getString(R.string.location_placeholder),
+                        locationText,
+                        null,
+                        null
+                    );
 				case VOICEMESSAGE:
 					return new MessageViewElement(R.drawable.ic_mic_filled,
 							context.getString(R.string.audio_placeholder),
@@ -929,5 +930,59 @@ public class MessageUtil {
 			&& (message instanceof MessageModel || message instanceof GroupMessageModel)
 			&& (message.getPostedAt() != null && message.getState() != MessageState.SENDFAILED)
 			&& !message.isDeleted();
+	}
+
+	@Nullable
+	public static MessageState receiptTypeToMessageState(int receiptType) {
+		switch (receiptType) {
+			case ProtocolDefines.DELIVERYRECEIPT_MSGRECEIVED:
+				return MessageState.DELIVERED;
+			case ProtocolDefines.DELIVERYRECEIPT_MSGREAD:
+				return MessageState.READ;
+			case ProtocolDefines.DELIVERYRECEIPT_MSGUSERACK:
+				return MessageState.USERACK;
+			case ProtocolDefines.DELIVERYRECEIPT_MSGUSERDEC:
+				return MessageState.USERDEC;
+			default:
+				return null;
+		}
+	}
+
+	/**
+	 * Check whether the user should be able to star the given message.
+	 */
+	public static boolean canStarMessage(AbstractMessageModel message) {
+		return (message instanceof MessageModel || message instanceof GroupMessageModel)
+				&& (message.getType().equals(MessageType.TEXT) ||
+				message.getType().equals(MessageType.FILE) ||
+				message.getType().equals(MessageType.LOCATION) ||
+				message.getType().equals(MessageType.BALLOT) ||
+				message.getType().equals(MessageType.CONTACT) ||
+				message.getType().equals(MessageType.IMAGE) ||
+				message.getType().equals(MessageType.VIDEO) ||
+				message.getType().equals(MessageType.VOICEMESSAGE));
+	}
+
+	/**
+	 * Check whether the user should be able to react to the given message with emojis
+	 */
+	public static boolean canEmojiReact(@Nullable AbstractMessageModel messageModel) {
+		if (messageModel == null) {
+			return false;
+		}
+
+		if (messageModel.isDeleted()) {
+			return false;
+		}
+
+		if (messageModel.isStatusMessage()) {
+			return false;
+		}
+
+		return (messageModel instanceof MessageModel || messageModel instanceof GroupMessageModel)
+			&& (messageModel.getType().equals(MessageType.TEXT) ||
+			messageModel.getType().equals(MessageType.FILE) ||
+			messageModel.getType().equals(MessageType.LOCATION) ||
+			messageModel.getType().equals(MessageType.BALLOT));
 	}
 }

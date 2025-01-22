@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="title_section2">Contacts</string>
     <string name="title_section1">Chats</string>
@@ -323,7 +323,7 @@
     <string name="state_dialog_edited">Edited</string>
     <string name="state_dialog_deleted">Deleted</string>
     <string name="state_dialog_status">Status</string>
-    <string name="title_tab_recent">Recent</string>
+    <string name="title_tab_recent">Recents</string>
     <string name="no_recent_conversations">No chats found</string>
     <string name="save_changes">Save</string>
     <string name="group_created_confirm">Group successfully created</string>
@@ -494,7 +494,6 @@
     <string name="back">Back</string>
     <string name="wearable_reply">Reply</string>
     <string name="wearable_reply_label">Reply to %s</string>
-    <string name="message_acknowledged">“Agree” sent</string>
     <string name="push_disable_text">If you continue, “Threema Push” will be used instead of the system’s push service. This helps reducing your digital footprint but requires that your phone is configured in a way to allow the app to run in the background. You may want to contact your device manufacturer’s support for assistance with the configuration if the corresponding options cannot be found in the device settings.</string>
     <string name="ballot_intermediate_results_show">Show intermediate results</string>
     <string name="converting_video">Processing video</string>
@@ -619,7 +618,8 @@
     <string name="permission_storage_required">To save or send media, allow Threema permission to access storage.</string>
     <string name="permission_location_required">To send a location, allow Threema permission to access your position.</string>
     <string name="permission_contacts_required">To send contacts, allow Threema permission to read contacts.</string>
-    <string name="message_declined">“Disagree” sent</string>
+    <string name="message_acknowledged" comment="&quot;Thumbs up&quot; should be translated by the name of the emoji 👍">“Thumbs up” sent</string>
+    <string name="message_declined" comment="&quot;Thumbs down&quot; should be translated by the name of the emoji 👎">“Thumbs down” sent</string>
     <string name="notifications_settings">Notification settings</string>
     <string name="notifications_default">Default settings</string>
     <string name="notifications_until">Until %s</string>
@@ -1069,8 +1069,7 @@
     <string name="message_was_deleted">This message was deleted</string>
     <string name="continue_recording">Continue recording</string>
     <string name="whatsnew_title">What\'s new in %1$s %2$s?</string>
-    <string name="whatsnew_headline">
-        <![CDATA[
+    <string name="whatsnew_headline"><![CDATA[
         <p>To improve the display of notifications, their handling in the background has been overhauled. If individual notification settings were activated for some chats, they need to be set again.</p>
         ]]>
     </string>
@@ -1566,6 +1565,17 @@
     <string name="md_link_device_qr_scan_message">Please scan the qr code</string>
     <string name="directory_request_failed">Directory request failed. Try again.</string>
     <string name="add_shortcut_exists">A shortcut for this target already exists.</string>
+    <string name="scan_qr_code">Scan QR Code</string>
+    <string name="scan_qr_code_explain">Scan the QR code displayed in the beta version of %s Desktop on the device you want to link.</string>
+    <string name="connecting">Connecting…</string>
+    <string name="trust_new_device">Trust New Device</string>
+    <string name="trust_new_device_explain">Select the same images as shown on the new device to confirm that you trust it.</string>
+    <string name="trust_new_device_info">The new device will store an independent copy of your %s profile, and messages will be sent and received on your behalf.</string>
+    <string name="no_match_question">No Match?</string>
+    <string name="sending_data">Sending data…</string>
+    <string name="continue_on_new_device">Please continue on new device</string>
+    <string name="device_linked_successfully">Device Linked Successfully</string>
+    <string name="device_linked_successfully_explain">%s can now be used on the device you just linked (even when this device is turned off or isn\'t connected to the Internet).</string>
     <string name="resend_message_dialog_title">Resend group message?</string>
     <string name="resend_message_dialog_message">This message could not be sent to all members. Resend message to %1$s?</string>
     <string name="work_lost_credentials_help">Forgot your credentials? Please contact your %1$s administrator.</string>
@@ -1610,7 +1620,10 @@
     <string name="incoming_calls">Incoming calls</string>
     <string name="group_chats">Group chats</string>
     <string name="edit_history_file_no_caption">No caption</string>
-
+    <string name="device_linking_failed">Device linking failed</string>
+    <string name="device_linking_failed_explain">The device could not be linked. Please try again.\nReason: %s.</string>
+    <string name="qr_code_scan_error">An error occurred while scanning the QR code</string>
+    <string name="verification_failed">Verification failed</string>
     <!-- accessibility -->
     <string name="cd_ack_icon">agree sent</string>
     <string name="cd_dec_icon">disagree sent</string>
@@ -1622,7 +1635,20 @@
     <string name="cd_message_details_container">message details</string>
     <string name="cd_enable_formatting">Enable formatting</string>
     <string name="cd_message">message</string>
-
+    <string name="reactions_on_this_message">All Reactions</string>
+    <string name="select_emoji_content_description">Select emoji to add from emoji picker</string>
+    <string name="group_emoji_reactions_partially_supported">Some won\'t see your reactions due to an old version.</string>
+    <string name="tab_emoji_reactions_overview_content_description">%1$s reactions with %2$s</string>
+    <string name="emoji_reactions_compatibility_infobox_text">You have received emoji reactions from a contact who has a newer app version. Besides 👍 and 👎, your app version does not yet support sending emoji reactions.</string>
+    <string name="reaction_cannot_be_displayed">This reaction cannot be displayed. Unknown emoji.</string>
+    <string name="emoji_reactions_unavailable_title">Emoji Reactions Unavailable</string>
+    <string name="emoji_reactions_sending_not_supported_body">Your app version does not yet support sending emoji reactions.</string>
+    <string name="emoji_reactions_unavailable_body">%1$s is using an app version that does not yet support this feature.</string>
+    <string name="emoji_reactions_unavailable_group_body">You cannot react to this message with an emoji because no group member has an app version that supports this feature.</string>
+    <string name="emoji_reactions_cannot_remove_title">Removing Reactions Unavailable</string>
+    <string name="emoji_reactions_cannot_remove_body">%1$s is using an app version that does not yet support removing emoji reactions or sending more than one emoji reaction. You can still replace 👍 with 👎 or vice versa.</string>
+    <string name="emoji_reactions_cannot_remove_group_body">None of the group members is using a version of the app that supports removing emoji reactions or sending more than one emoji reaction. You can replace 👍 with 👎 or vice-versa.</string>
+    <string name="emoji_reactions_cannot_remove_v1_body">Your app version does not yet support removing emoji reactions or sending more than one emoji reaction.</string>
     <plurals name="contacts_counter_label">
         <item quantity="one">%d contact</item>
         <item quantity="few">%d contacts</item>

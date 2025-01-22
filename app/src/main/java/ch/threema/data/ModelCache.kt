@@ -24,6 +24,7 @@ package ch.threema.data
 import ch.threema.data.models.BaseModel
 import ch.threema.data.models.ContactModel
 import ch.threema.data.models.EditHistoryListModel
+import ch.threema.data.models.EmojiReactionsModel
 import ch.threema.data.models.GroupIdentity
 import ch.threema.data.models.GroupModel
 
@@ -42,6 +43,9 @@ class ModelCache {
 
     // Edit history entries are identified by their reference to a message's uid
     val editHistory = ModelTypeCache<String, EditHistoryListModel>()
+
+    // Emoji reactions are uniquely identified by a message's uid
+    val emojiReaction = ModelTypeCache<String, EmojiReactionsModel>()
 }
 
 /**
@@ -51,7 +55,7 @@ class ModelCache {
  * Internally, it uses a [WeakValueMap], so the values are not prevented from being
  * garbage collected by the cache.
  */
-class ModelTypeCache<TIdentifier, TModel : BaseModel<*>> {
+class ModelTypeCache<TIdentifier, TModel : BaseModel<*, *>> {
     private val map = WeakValueMap<TIdentifier, TModel>()
 
     /**

@@ -75,7 +75,7 @@ public class MessageUtilTest  {
 	private GroupMessageModel groupMessageModelInbox;
 	private GroupMessageModel groupMessageModelOutbox;
 
-	private ServiceManager serviceManagerMock = mock(ServiceManager.class);
+	private final ServiceManager serviceManagerMock = mock(ServiceManager.class);
 
 	private DistributionListMessageModel distributionListMessageModelOutbox;
 
@@ -345,12 +345,12 @@ public class MessageUtilTest  {
 
 		assertFalse(MessageUtil.showStatusIcon(this.contactMessageModelInbox));
 		assertTrue(MessageUtil.showStatusIcon(this.contactMessageModelOutbox));
-		assertTrue(MessageUtil.showStatusIcon(this.contactMessageModelInboxUserAcknowledged));
+		assertFalse(MessageUtil.showStatusIcon(this.contactMessageModelInboxUserAcknowledged));
 		assertTrue(MessageUtil.showStatusIcon(this.contactMessageModelOutboxUserAcknowledged));
 
 		assertFalse(MessageUtil.showStatusIcon(this.businessContactMessageModelInbox));
 		assertFalse(MessageUtil.showStatusIcon(this.businessContactMessageModelOutbox));
-		assertTrue(MessageUtil.showStatusIcon(this.businessContactMessageModelInboxUserAcknowledged));
+		assertFalse(MessageUtil.showStatusIcon(this.businessContactMessageModelInboxUserAcknowledged));
 		assertFalse(MessageUtil.showStatusIcon(this.businessContactMessageModelOutboxUserAcknowledged));
 
 		assertFalse(MessageUtil.showStatusIcon(this.groupMessageModelInbox));
@@ -591,7 +591,7 @@ public class MessageUtilTest  {
 		when(distributionListService.getMembers(any())).thenReturn(contacts);
 
 		ContactService contactService = mock(ContactService.class);
-		when(contactService.createReceiver(any())).thenAnswer(invocation -> {
+		when(contactService.createReceiver((ContactModel) any())).thenAnswer(invocation -> {
 			ContactModel contactModel = invocation.getArgument(0, ContactModel.class);
 			return new ContactMessageReceiver(contactModel, null, serviceManagerMock, null, null, null);
 		});

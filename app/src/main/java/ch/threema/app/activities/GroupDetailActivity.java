@@ -93,8 +93,8 @@ import ch.threema.app.listeners.ContactListener;
 import ch.threema.app.listeners.ContactSettingsListener;
 import ch.threema.app.listeners.GroupListener;
 import ch.threema.app.managers.ListenerManager;
+import ch.threema.app.services.BlockedIdentitiesService;
 import ch.threema.app.services.DeviceService;
-import ch.threema.app.services.IdListService;
 import ch.threema.app.services.group.GroupInviteService;
 import ch.threema.app.ui.AvatarEditView;
 import ch.threema.app.ui.GroupDetailViewModel;
@@ -150,7 +150,7 @@ public class GroupDetailActivity extends GroupEditActivity implements SelectorDi
 
 	private GroupInviteService groupInviteService;
 	private DeviceService deviceService;
-	private IdListService blockedContactsService;
+	private BlockedIdentitiesService blockedIdentitiesService;
 	private GroupCallManager groupCallManager;
 
 	private GroupModel groupModel;
@@ -230,9 +230,9 @@ public class GroupDetailActivity extends GroupEditActivity implements SelectorDi
 		}
 
 		@Override
-		public void onAvatarChanged(ContactModel contactModel) {
-			if (this.shouldHandleChange(contactModel.getIdentity())) {
-				this.onModified(contactModel.getIdentity());
+		public void onAvatarChanged(final @NonNull String identity) {
+			if (this.shouldHandleChange(identity)) {
+				this.onModified(identity);
 			}
 		}
 
@@ -263,12 +263,12 @@ public class GroupDetailActivity extends GroupEditActivity implements SelectorDi
 		}
 
 		@Override
-		public void onNewMember(GroupModel group, String newIdentity, int previousMemberCount) {
+		public void onNewMember(GroupModel group, String newIdentity) {
 			resumePauseHandler.runOnActive(RUN_ON_ACTIVE_RELOAD, runIfActiveUpdate);
 		}
 
 		@Override
-		public void onMemberLeave(GroupModel group, String identity, int previousMemberCount) {
+		public void onMemberLeave(GroupModel group, String identity) {
 			if (identity.equals(myIdentity)) {
 				finish();
 			} else {
@@ -277,7 +277,7 @@ public class GroupDetailActivity extends GroupEditActivity implements SelectorDi
 		}
 
 		@Override
-		public void onMemberKicked(GroupModel group, String identity, int previousMemberCount) {
+		public void onMemberKicked(GroupModel group, String identity) {
 			if (identity.equals(myIdentity)) {
 				finish();
 			} else {
@@ -324,7 +324,7 @@ public class GroupDetailActivity extends GroupEditActivity implements SelectorDi
 		// services
 		try {
 			this.deviceService = serviceManager.getDeviceService();
-			this.blockedContactsService = serviceManager.getBlockedContactsService();
+			this.blockedIdentitiesService = serviceManager.getBlockedIdentitiesService();
 			this.groupInviteService = serviceManager.getGroupInviteService();
 			this.groupCallManager = serviceManager.getGroupCallManager();
 		} catch (ThreemaException e) {
@@ -333,7 +333,7 @@ public class GroupDetailActivity extends GroupEditActivity implements SelectorDi
 			return;
 		}
 
-		if (this.deviceService == null || this.blockedContactsService == null) {
+		if (this.deviceService == null || this.blockedIdentitiesService == null) {
 			finish();
 			return;
 		}
@@ -482,7 +482,7 @@ public class GroupDetailActivity extends GroupEditActivity implements SelectorDi
 
 	private void setupAdapter() throws MasterKeyLockedException, FileSystemNotPresentException {
 		Runnable onCloneGroupRunnable = null;
-		if (groupService.isOrphanedGroup(groupModel) && groupService.getOtherMemberCount(groupModel) > 0) {
+		if (groupService.isOrphanedGroup(groupModel) && groupService.countMembersWithoutUser(groupModel) > 0) {
 			onCloneGroupRunnable = this::showCloneDialog;
 		}
 
@@ -597,7 +597,7 @@ public class GroupDetailActivity extends GroupEditActivity implements SelectorDi
 
 			boolean isMember = groupService.isGroupMember(groupModel);
 			boolean isCreator = groupService.isGroupCreator(groupModel);
-			boolean hasOtherMembers = groupService.getOtherMemberCount(groupModel) > 0;
+			boolean hasOtherMembers = groupService.countMembersWithoutUser(groupModel) > 0;
 
 			// The clone menu only makes sense if at least one other member is present
 			cloneMenu.setVisible(hasOtherMembers);
@@ -1167,7 +1167,7 @@ public class GroupDetailActivity extends GroupEditActivity implements SelectorDi
 			items.add(new SelectorDialogItem(String.format(getString(R.string.chat_with), shortName), R.drawable.ic_chat_bubble));
 			optionsMap.add(SELECTOR_OPTION_CHAT);
 
-			if (ContactUtil.canReceiveVoipMessages(contactModel, blockedContactsService)
+			if (ContactUtil.canReceiveVoipMessages(contactModel, blockedIdentitiesService)
 				&& ConfigUtils.isCallsEnabled()
 			) {
 				items.add(new SelectorDialogItem(String.format(getString(R.string.call_with), shortName), R.drawable.ic_phone_locked_outline));
